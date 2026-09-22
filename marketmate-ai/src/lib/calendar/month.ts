@@ -58,3 +58,5 @@ export function monthGrid(ref: MonthRef): (string | null)[][] {
 }
 
 export const CALENDAR_STATUSES = ["idea", "planned", "drafted", "scheduled", "posted"] as const;
+
+export const CALENDAR_CONTENT_TYPES = ["Post", "Reel / short video", "Story", "Carousel", "Live", "Email", "Blog post", "Ad", "Other"] as const;

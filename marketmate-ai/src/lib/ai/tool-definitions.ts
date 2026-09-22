@@ -4,7 +4,10 @@
  * validates requests against these same field definitions (./validation.ts).
  */
 
-export type FieldType = "text" | "textarea" | "select";
+export type FieldType = "text" | "textarea" | "select" | "checkboxes";
+
+/** Business-profile values a field can be pre-filled from. */
+export type PrefillKey = "businessName" | "industry" | "products" | "location" | "targetAudience" | "platforms" | "brandTone";
 
 export interface ToolField {
   name: string;
@@ -15,59 +18,98 @@ export interface ToolField {
   options?: readonly string[];
   maxLength?: number;
   help?: string;
+  prefill?: PrefillKey;
+  defaultValue?: string;
 }
 
 export type StorageTarget =
-  | { table: "social_content"; contentType: string }
-  | { table: "marketing_plans"; planType: string };
+  | { table: "social_content"; contentType: string; contentTypeFrom?: { field: string; map: Record<string, string> } }
+  | { table: "marketing_plans"; planType: string }
+  | { table: "campaigns"; campaignTypeFrom: { field: string; map: Record<string, string> } };
 
 export interface ToolDefinition {
   id: string;
   title: string;
   description: string;
-  section: "social" | "strategy" | "studio";
+  section: "social" | "strategy" | "studio" | "design";
   fields: readonly ToolField[];
   storage: StorageTarget;
   /** Which field (if any) holds the platform, stored alongside social content. */
   platformField?: string;
+  /** Shown above results to label what kind of information this is. */
+  disclaimer?: string;
 }
 
-export const PLATFORMS = [
-  "Instagram",
-  "TikTok",
-  "Facebook",
-  "LinkedIn",
-  "X (Twitter)",
-  "Pinterest",
-  "YouTube",
-  "Threads",
-] as const;
+export const PLATFORMS = ["Instagram", "Facebook", "TikTok", "LinkedIn", "X (Twitter)", "Pinterest", "YouTube", "Threads"] as const;
+export const TONES = ["Professional", "Friendly", "Luxury", "Fun", "Bold", "Minimal", "Persuasive", "Casual"] as const;
+export const LENGTHS = ["Short", "Medium", "Long"] as const;
+export const OBJECTIVES = ["Sell", "Educate", "Engage", "Announce", "Promote", "Build awareness"] as const;
 
-export const TONES = [
-  "Friendly",
-  "Professional",
-  "Playful",
-  "Luxurious",
-  "Bold",
-  "Inspirational",
-  "Educational",
-] as const;
-
-const platform: ToolField = {
-  name: "platform",
-  label: "Platform",
-  type: "select",
-  required: true,
-  options: PLATFORMS,
+export const CAMPAIGN_TYPES: Record<string, string> = {
+  "Product launch": "product_launch",
+  "Sale / discount": "sale",
+  Holiday: "holiday",
+  "Seasonal promotion": "seasonal",
+  "Brand awareness": "brand_awareness",
+  "Customer retention": "customer_retention",
+  "New customer acquisition": "customer_acquisition",
 };
-const tone: ToolField = { name: "tone", label: "Tone", type: "select", options: TONES };
-const productOrTopic: ToolField = {
-  name: "topic",
-  label: "Product, offer or topic",
+
+/** Content Creation Studio types → social_content.content_type. */
+export const STUDIO_CONTENT_TYPES: Record<string, string> = {
+  "Product description": "product_description",
+  Advertisement: "ad_copy",
+  "Email campaign": "email",
+  "TikTok script": "video_script",
+  "Instagram caption": "caption",
+  "Facebook post": "social_post",
+  "LinkedIn post": "social_post",
+  "Website copy": "website_copy",
+  "Promotional message": "promo_message",
+  "Call-to-action": "cta",
+  "Product launch announcement": "launch_announcement",
+};
+
+// ---- shared fields ----
+const platform: ToolField = { name: "platform", label: "Platform", type: "select", required: true, options: PLATFORMS };
+const tone: ToolField = { name: "tone", label: "Tone", type: "select", options: TONES, prefill: "brandTone" };
+const businessName: ToolField = { name: "business_name", label: "Business name", type: "text", maxLength: 200, prefill: "businessName" };
+const industry: ToolField = { name: "industry", label: "Industry / business type", type: "text", maxLength: 200, prefill: "industry", placeholder: "e.g. Handmade candles" };
+const product = (required = true): ToolField => ({
+  name: "product",
+  label: "Product or service",
   type: "textarea",
-  required: true,
+  required,
   maxLength: 2000,
-  placeholder: "e.g. Our new lavender soy candle, 40-hour burn, $24",
+  prefill: "products",
+  placeholder: "e.g. Lavender soy candle, 40-hour burn, $24",
+});
+const location: ToolField = { name: "location", label: "Location", type: "text", maxLength: 200, prefill: "location", placeholder: "e.g. Bridgetown, Barbados" };
+const audience = (required = false): ToolField => ({
+  name: "target_audience",
+  label: "Target audience",
+  type: "textarea",
+  required,
+  maxLength: 1500,
+  prefill: "targetAudience",
+  placeholder: "e.g. Women 25–45 who love self-care and gifting",
+});
+const budget: ToolField = { name: "budget", label: "Budget", type: "text", maxLength: 100, placeholder: "e.g. $300 per month" };
+const duration: ToolField = { name: "duration", label: "Campaign duration", type: "select", options: ["2 weeks", "1 month", "3 months", "6 months"] };
+const currentPlatforms: ToolField = {
+  name: "platforms",
+  label: "Current social platforms",
+  type: "checkboxes",
+  options: ["Instagram", "Facebook", "TikTok", "LinkedIn", "X (Twitter)", "Pinterest", "YouTube", "WhatsApp", "Website", "Email list"],
+  prefill: "platforms",
+};
+const competitorsOptional: ToolField = {
+  name: "competitors",
+  label: "Competitors (optional)",
+  type: "textarea",
+  maxLength: 2000,
+  placeholder: "Names and anything you know about them",
+  help: "Only what you enter here is used — MarketMate doesn't look up competitors online.",
 };
 
 export const TOOL_DEFINITIONS = {
@@ -75,14 +117,15 @@ export const TOOL_DEFINITIONS = {
   caption: {
     id: "caption",
     title: "Caption generator",
-    description: "Scroll-stopping captions with a hook and call to action.",
+    description: "Platform-ready captions with a hook and a clear call to action.",
     section: "social",
     fields: [
       platform,
-      productOrTopic,
+      product(),
+      audience(),
       tone,
-      { name: "goal", label: "Goal", type: "select", options: ["Sales", "Engagement", "Awareness", "Traffic", "Community"] },
-      { name: "variations", label: "Number of variations", type: "select", options: ["1", "3", "5"] },
+      { name: "objective", label: "Campaign objective", type: "select", options: ["Sales", "Engagement", "Awareness", "Website traffic", "Product launch", "Community building"] },
+      { name: "variations", label: "Number of variations", type: "select", options: ["3", "1", "5"] },
     ],
     storage: { table: "social_content", contentType: "caption" },
     platformField: "platform",
@@ -90,12 +133,14 @@ export const TOOL_DEFINITIONS = {
   hashtags: {
     id: "hashtags",
     title: "Hashtag generator",
-    description: "A tiered mix of broad, niche and local hashtags.",
+    description: "A tiered mix of broad, niche, local and campaign hashtags.",
     section: "social",
     fields: [
       platform,
-      productOrTopic,
-      { name: "location", label: "Location (optional)", type: "text", maxLength: 120, placeholder: "e.g. Austin, TX" },
+      product(),
+      industry,
+      location,
+      { name: "campaign", label: "Campaign (optional)", type: "text", maxLength: 200, placeholder: "e.g. Holiday gift sale" },
     ],
     storage: { table: "social_content", contentType: "hashtags" },
     platformField: "platform",
@@ -103,12 +148,15 @@ export const TOOL_DEFINITIONS = {
   content_ideas: {
     id: "content_ideas",
     title: "Content ideas",
-    description: "Fresh post ideas mapped to content pillars.",
+    description: "Post ideas built around engagement, relevance and platform best practices.",
     section: "social",
     fields: [
       platform,
-      { name: "topic", label: "Focus (optional)", type: "textarea", maxLength: 2000, placeholder: "e.g. holiday season, a new launch, behind the scenes" },
-      { name: "count", label: "How many ideas", type: "select", options: ["5", "10", "20"] },
+      { ...industry, required: true },
+      audience(),
+      product(false),
+      { name: "goal", label: "Marketing goal", type: "select", required: true, options: ["Grow followers", "Increase sales", "Build brand awareness", "Boost engagement", "Launch a product", "Build trust"] },
+      { name: "count", label: "How many ideas", type: "select", options: ["10", "5", "20"] },
     ],
     storage: { table: "social_content", contentType: "content_idea" },
     platformField: "platform",
@@ -116,11 +164,19 @@ export const TOOL_DEFINITIONS = {
   repurpose: {
     id: "repurpose",
     title: "Content repurposing",
-    description: "Turn one piece of content into posts for other platforms.",
+    description: "Turn one piece of content into posts for other channels.",
     section: "social",
     fields: [
       { name: "source", label: "Original content", type: "textarea", required: true, maxLength: 8000, placeholder: "Paste a caption, blog post, email or video script" },
-      { name: "targets", label: "Repurpose for", type: "text", required: true, maxLength: 200, placeholder: "e.g. TikTok script, LinkedIn post, email" },
+      {
+        name: "targets",
+        label: "Turn it into",
+        type: "checkboxes",
+        required: true,
+        options: ["Instagram caption", "Facebook post", "TikTok script", "LinkedIn post", "Email", "Short advertisement"],
+        defaultValue: "Instagram caption, Facebook post, TikTok script",
+      },
+      tone,
     ],
     storage: { table: "social_content", contentType: "repurposed" },
   },
@@ -129,116 +185,115 @@ export const TOOL_DEFINITIONS = {
   audience_analysis: {
     id: "audience_analysis",
     title: "Target audience analysis",
-    description: "Who buys, why they buy, and where to reach them.",
+    description: "Demographics, needs, pain points, motivations, interests and behaviour.",
     section: "strategy",
-    fields: [
-      { name: "offer", label: "What you sell", type: "textarea", required: true, maxLength: 2000 },
-      { name: "current_customers", label: "Who buys today (optional)", type: "textarea", maxLength: 2000 },
-      { name: "price_point", label: "Price point (optional)", type: "text", maxLength: 100 },
-    ],
+    fields: [businessName, { ...industry, required: true }, product(), location, audience(), { name: "objective", label: "Marketing objective", type: "text", maxLength: 500 }, competitorsOptional],
     storage: { table: "marketing_plans", planType: "audience_analysis" },
   },
   personas: {
     id: "personas",
     title: "Customer personas",
-    description: "Detailed buyer personas with goals, objections and messaging.",
+    description: "Realistic buyer personas: goals, pain points, buying behaviour and platforms.",
     section: "strategy",
-    fields: [
-      { name: "offer", label: "What you sell", type: "textarea", required: true, maxLength: 2000 },
-      { name: "audience_notes", label: "What you know about your audience (optional)", type: "textarea", maxLength: 2000 },
-      { name: "count", label: "Number of personas", type: "select", options: ["1", "2", "3"] },
-    ],
+    fields: [businessName, industry, product(), location, audience(), { name: "count", label: "Number of personas", type: "select", options: ["2", "1", "3"] }],
     storage: { table: "marketing_plans", planType: "persona" },
   },
   marketing_plan: {
     id: "marketing_plan",
     title: "Marketing plan",
-    description: "A practical 30/60/90-day plan with channels and weekly actions.",
+    description: "Objectives, strategy, channels, content, promotions, timeline and KPIs.",
     section: "strategy",
     fields: [
-      { name: "goal", label: "Main goal", type: "textarea", required: true, maxLength: 1000, placeholder: "e.g. Reach $5k/month in online sales" },
-      { name: "budget", label: "Monthly marketing budget", type: "text", maxLength: 100, placeholder: "e.g. $200" },
-      { name: "time", label: "Hours per week available", type: "text", maxLength: 100 },
-      { name: "channels", label: "Channels you use now (optional)", type: "text", maxLength: 300 },
+      businessName,
+      { ...industry, required: true },
+      product(),
+      location,
+      audience(),
+      budget,
+      { name: "objective", label: "Marketing objective", type: "textarea", required: true, maxLength: 1000, placeholder: "e.g. Reach $5k/month in online sales" },
+      currentPlatforms,
+      competitorsOptional,
+      { ...duration, label: "Plan duration", options: ["3 months", "1 month", "6 months"] },
     ],
     storage: { table: "marketing_plans", planType: "marketing_plan" },
   },
   campaigns: {
     id: "campaigns",
     title: "Campaign ideas",
-    description: "Campaign concepts with hooks, offers and timelines.",
+    description: "Campaigns for launches, sales, holidays, seasons, awareness, retention and new customers.",
     section: "strategy",
     fields: [
-      { name: "objective", label: "Campaign objective", type: "textarea", required: true, maxLength: 1000 },
-      { name: "occasion", label: "Season or occasion (optional)", type: "text", maxLength: 200 },
-      { name: "budget", label: "Budget (optional)", type: "text", maxLength: 100 },
+      { name: "campaign_type", label: "Campaign type", type: "select", required: true, options: Object.keys(CAMPAIGN_TYPES) },
+      businessName,
+      product(),
+      audience(),
+      { name: "objective", label: "Objective", type: "textarea", maxLength: 1000 },
+      { name: "occasion", label: "Holiday / season / date (optional)", type: "text", maxLength: 200, placeholder: "e.g. Mother's Day, back to school" },
+      budget,
+      duration,
+      currentPlatforms,
     ],
-    storage: { table: "marketing_plans", planType: "campaign" },
+    storage: { table: "campaigns", campaignTypeFrom: { field: "campaign_type", map: CAMPAIGN_TYPES } },
+  },
+  competitor_analysis: {
+    id: "competitor_analysis",
+    title: "Competitor analysis",
+    description: "Positioning analysis of competitors you name, based only on what you tell it.",
+    section: "strategy",
+    fields: [
+      businessName,
+      { ...industry, required: true },
+      product(),
+      location,
+      { name: "competitors", label: "Competitors", type: "textarea", required: true, maxLength: 3000, placeholder: "One per line, with anything you know: prices, products, strengths, where they sell" },
+    ],
+    storage: { table: "marketing_plans", planType: "competitor_analysis" },
+    disclaimer:
+      "AI analysis of the competitor information you provided. MarketMate does not research competitors online, so nothing here is verified.",
   },
 
   // ---- Content Creation Studio ----
-  product_description: {
-    id: "product_description",
-    title: "Product description",
-    description: "Benefit-led product copy for your store or marketplace.",
+  content: {
+    id: "content",
+    title: "Content Creation Studio",
+    description: "Product descriptions, ads, emails, scripts, social posts, website copy and more.",
     section: "studio",
     fields: [
-      { name: "product", label: "Product name", type: "text", required: true, maxLength: 200 },
-      { name: "details", label: "Features, materials, sizes, price", type: "textarea", required: true, maxLength: 3000 },
-      { name: "channel", label: "Where it will appear", type: "select", options: ["Website", "Etsy", "Amazon", "Shopify", "Instagram Shop"] },
-      tone,
+      { name: "content_type", label: "What to create", type: "select", required: true, options: Object.keys(STUDIO_CONTENT_TYPES) },
+      { ...product(), label: "Product, service or topic" },
+      { name: "details", label: "Key details (optional)", type: "textarea", maxLength: 3000, placeholder: "Features, price, offer, dates, links — anything the copy should include" },
+      audience(),
+      { ...tone, options: TONES },
+      { name: "length", label: "Length", type: "select", options: ["Medium", "Short", "Long"] },
+      { name: "objective", label: "Objective", type: "select", options: OBJECTIVES },
+      { name: "cta", label: "Call to action (optional)", type: "text", maxLength: 200, placeholder: "e.g. Shop now at glow.example" },
     ],
-    storage: { table: "social_content", contentType: "product_description" },
+    storage: {
+      table: "social_content",
+      contentType: "other",
+      contentTypeFrom: { field: "content_type", map: STUDIO_CONTENT_TYPES },
+    },
   },
-  email: {
-    id: "email",
-    title: "Email",
-    description: "Newsletters, launch emails and promotions with subject lines.",
-    section: "studio",
+
+  // ---- Design Studio (marketing copy for a design; image generation is separate) ----
+  design_copy: {
+    id: "design_copy",
+    title: "Design copy",
+    description: "Headline, supporting text and call to action for a design.",
+    section: "design",
     fields: [
-      { name: "email_type", label: "Email type", type: "select", required: true, options: ["Newsletter", "Product launch", "Sale / promotion", "Welcome", "Abandoned cart", "Re-engagement"] },
-      { name: "topic", label: "What it's about", type: "textarea", required: true, maxLength: 3000 },
-      tone,
+      { name: "design_type", label: "Design type", type: "text", required: true, maxLength: 100 },
+      { ...businessName, required: true },
+      { ...product(), maxLength: 500 },
+      { name: "description", label: "Product description", type: "textarea", maxLength: 2000 },
+      { name: "price", label: "Price", type: "text", maxLength: 50 },
+      { name: "promotion", label: "Promotion", type: "text", maxLength: 300 },
+      { name: "contact", label: "Contact information", type: "text", maxLength: 300 },
+      { name: "handles", label: "Social media handles", type: "text", maxLength: 300 },
+      { name: "target_audience", label: "Target audience", type: "text", maxLength: 500 },
+      { name: "style", label: "Style", type: "text", maxLength: 100 },
     ],
-    storage: { table: "social_content", contentType: "email" },
-  },
-  blog_post: {
-    id: "blog_post",
-    title: "Blog post",
-    description: "An SEO-friendly blog post draft with headings.",
-    section: "studio",
-    fields: [
-      { name: "topic", label: "Topic or title", type: "text", required: true, maxLength: 300 },
-      { name: "keywords", label: "Keywords (optional)", type: "text", maxLength: 300 },
-      { name: "length", label: "Length", type: "select", options: ["Short (~500 words)", "Medium (~900 words)", "Long (~1500 words)"] },
-      tone,
-    ],
-    storage: { table: "social_content", contentType: "blog_post" },
-  },
-  ad_copy: {
-    id: "ad_copy",
-    title: "Ad copy",
-    description: "Headlines, primary text and CTAs for paid ads.",
-    section: "studio",
-    fields: [
-      { name: "ad_platform", label: "Ad platform", type: "select", required: true, options: ["Meta (Facebook/Instagram)", "Google Search", "TikTok", "Pinterest"] },
-      { name: "offer", label: "Offer", type: "textarea", required: true, maxLength: 2000 },
-      { name: "audience", label: "Audience (optional)", type: "text", maxLength: 300 },
-    ],
-    storage: { table: "social_content", contentType: "ad_copy" },
-    platformField: "ad_platform",
-  },
-  video_script: {
-    id: "video_script",
-    title: "Short video script",
-    description: "Reels/TikTok scripts with hook, shots and on-screen text.",
-    section: "studio",
-    fields: [
-      { name: "topic", label: "Video topic", type: "textarea", required: true, maxLength: 2000 },
-      { name: "duration", label: "Length", type: "select", options: ["15 seconds", "30 seconds", "60 seconds"] },
-      tone,
-    ],
-    storage: { table: "social_content", contentType: "video_script" },
+    storage: { table: "social_content", contentType: "design_copy" },
   },
 } as const satisfies Record<string, ToolDefinition>;
 
@@ -250,4 +305,19 @@ export function isToolId(value: unknown): value is ToolId {
 
 export function getTool(id: ToolId): ToolDefinition {
   return TOOL_DEFINITIONS[id];
+}
+
+/** The social_content.content_type a generation is stored under. */
+export function resolveContentType(tool: ToolDefinition, input: Record<string, string>): string | null {
+  if (tool.storage.table !== "social_content") return null;
+  const from = tool.storage.contentTypeFrom;
+  return (from && from.map[input[from.field]]) || tool.storage.contentType;
+}
+
+/** The platform a generation is stored under, if the tool has one. */
+export function resolvePlatform(tool: ToolDefinition, input: Record<string, string>): string | null {
+  if (tool.platformField) return input[tool.platformField] ?? null;
+  const type = input.content_type ?? "";
+  const match = ["Instagram", "Facebook", "TikTok", "LinkedIn"].find((p) => type.startsWith(p));
+  return match ?? null;
 }

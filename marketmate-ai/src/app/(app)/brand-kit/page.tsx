@@ -14,9 +14,9 @@ export default async function BrandKitPage() {
 
   return (
     <>
-      <PageHeader title="Brand kit" description="Colours, fonts, logo and voice. Used by AI tools and the Design Studio." />
+      <PageHeader title="Brand kit" description="Logo, colours, fonts, tone, slogan and social handles. Used by every AI tool and the Design Studio." />
       {business ? (
-        <BrandKitForm defaults={kit} userId={user.id} businessName={business.name} />
+        <BrandKitForm defaults={kit} userId={user.id} businessName={business.name} handles={business.social_handles ?? {}} />
       ) : (
         <p className="card text-sm">
           Create your <Link href="/business" className="text-brand underline">business profile</Link> first — the brand kit belongs to it.

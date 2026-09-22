@@ -17,7 +17,7 @@ interface Defaults {
   logo_path: string | null;
 }
 
-export function BrandKitForm({ defaults, userId, businessName }: { defaults: Defaults | null; userId: string; businessName: string }) {
+export function BrandKitForm({ defaults, userId, businessName, handles }: { defaults: Defaults | null; userId: string; businessName: string; handles: Record<string, string> }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveBrandKit, {});
   const [colors, setColors] = useState({
     primary_color: defaults?.primary_color ?? "#4F46E5",
@@ -50,11 +50,11 @@ export function BrandKitForm({ defaults, userId, businessName }: { defaults: Def
           </div>
         </div>
         <div>
-          <label className="label" htmlFor="tagline">Tagline</label>
+          <label className="label" htmlFor="tagline">Business slogan</label>
           <input className="input" id="tagline" name="tagline" maxLength={200} defaultValue={defaults?.tagline ?? ""} />
         </div>
         <div>
-          <label className="label" htmlFor="brand_voice">Brand voice</label>
+          <label className="label" htmlFor="brand_voice">Brand tone</label>
           <textarea className="input min-h-24" id="brand_voice" name="brand_voice" maxLength={2000} defaultValue={defaults?.brand_voice ?? ""} placeholder="e.g. Warm, down-to-earth and a little witty. We never use jargon." />
         </div>
         <div>
@@ -77,6 +77,17 @@ export function BrandKitForm({ defaults, userId, businessName }: { defaults: Def
             <p className="text-sm" style={{ color: colors.primary_color }}>Your brand colours in action.</p>
             <span className="inline-block rounded-md px-3 py-1.5 text-sm font-medium text-white" style={{ background: colors.accent_color }}>Shop now</span>
           </div>
+        </div>
+        <div className="mt-4 border-t border-border pt-3 text-sm">
+          <p className="mb-1 font-medium">Social handles</p>
+          {Object.keys(handles).length ? (
+            <ul className="space-y-0.5 text-muted">
+              {Object.entries(handles).map(([k, v]) => <li key={k}><span className="capitalize">{k === "x" ? "X" : k}</span>: {v}</li>)}
+            </ul>
+          ) : (
+            <p className="text-muted">None yet.</p>
+          )}
+          <a href="/business" className="mt-2 inline-block text-brand hover:underline">Edit in business profile</a>
         </div>
       </aside>
     </div>

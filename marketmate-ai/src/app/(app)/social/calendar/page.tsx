@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
-import { addMonths, CALENDAR_STATUSES as STATUSES, formatMonthParam, monthGrid, monthRange, parseMonth } from "@/lib/calendar/month";
+import { PLATFORMS } from "@/lib/ai/tool-definitions";
+import { addMonths, CALENDAR_STATUSES, formatMonthParam, monthGrid, monthRange, parseMonth } from "@/lib/calendar/month";
 import { requireAuth } from "@/lib/supabase/server";
-import { deleteCalendarEntry, updateCalendarStatus } from "./actions";
 import { EntryForm } from "./entry-form";
+import { EntryRow } from "./entry-row";
 
 export const metadata: Metadata = { title: "Content calendar" };
 
@@ -14,10 +15,15 @@ interface Entry {
   platform: string;
   scheduled_for: string;
   status: string;
+  content_type: string | null;
+  topic: string | null;
+  caption: string | null;
+  cta: string | null;
   notes: string | null;
+  social_content_id: string | null;
 }
 
-const STATUS_STYLES: Record<string, string> = {
+const STATUS_DOT: Record<string, string> = {
   idea: "bg-slate-200 text-slate-800",
   planned: "bg-blue-100 text-blue-800",
   drafted: "bg-amber-100 text-amber-800",
@@ -27,49 +33,70 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default async function CalendarPage({ searchParams }: PageProps<"/social/calendar">) {
   const { supabase } = await requireAuth("/social/calendar");
-  const { month: monthParam } = await searchParams;
+  const sp = await searchParams;
+  const str = (v: unknown) => (typeof v === "string" ? v : "");
+  const platform = (PLATFORMS as readonly string[]).includes(str(sp.platform)) ? str(sp.platform) : "";
+  const status = (CALENDAR_STATUSES as readonly string[]).includes(str(sp.status)) ? str(sp.status) : "";
+
   const now = new Date();
   const today = now.toISOString().slice(0, 10);
-  const ref = parseMonth(typeof monthParam === "string" ? monthParam : null, {
-    year: now.getUTCFullYear(),
-    month: now.getUTCMonth() + 1,
-  });
+  const ref = parseMonth(str(sp.month), { year: now.getUTCFullYear(), month: now.getUTCMonth() + 1 });
   const { start, end } = monthRange(ref);
 
-  const [{ data: entryData }, { data: contentData }] = await Promise.all([
-    supabase
-      .from("content_calendar_entries")
-      .select("id, title, platform, scheduled_for, status, notes")
-      .gte("scheduled_for", start)
-      .lte("scheduled_for", end)
-      .order("scheduled_for"),
-    supabase
-      .from("social_content")
-      .select("id, title")
-      .order("created_at", { ascending: false })
-      .limit(30),
+  let query = supabase
+    .from("content_calendar_entries")
+    .select("id, title, platform, scheduled_for, status, content_type, topic, caption, cta, notes, social_content_id")
+    .gte("scheduled_for", start)
+    .lte("scheduled_for", end)
+    .order("scheduled_for")
+    .order("created_at");
+  if (platform) query = query.eq("platform", platform);
+  if (status) query = query.eq("status", status);
+
+  const [{ data: entryData, error }, { data: contentData }] = await Promise.all([
+    query,
+    supabase.from("social_content").select("id, title").order("created_at", { ascending: false }).limit(30),
   ]);
   const entries = (entryData ?? []) as Entry[];
+  const content = (contentData ?? []) as { id: string; title: string | null }[];
   const byDate = new Map<string, Entry[]>();
   for (const e of entries) byDate.set(e.scheduled_for, [...(byDate.get(e.scheduled_for) ?? []), e]);
 
-  const label = new Date(Date.UTC(ref.year, ref.month - 1, 1)).toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+  const label = new Date(Date.UTC(ref.year, ref.month - 1, 1)).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
   const defaultDate = today >= start && today <= end ? today : start;
+  const qs = (patch: Record<string, string>) => {
+    const p = new URLSearchParams({ month: formatMonthParam(ref), platform, status, ...patch });
+    for (const [k, v] of [...p.entries()]) if (!v) p.delete(k);
+    return `?${p.toString()}`;
+  };
 
   return (
     <>
-      <PageHeader title="Content calendar" description="Plan what goes out, where, and when." />
-      <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
+      <PageHeader title="Content calendar" description="Plan what goes out, where and when — with the caption and call to action ready to post." />
+      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <div className="min-w-0 space-y-6">
-          <div className="flex items-center justify-between">
-            <Link className="btn-secondary" href={`?month=${formatMonthParam(addMonths(ref, -1))}`}>← Prev</Link>
-            <h2 className="text-lg font-semibold">{label}</h2>
-            <Link className="btn-secondary" href={`?month=${formatMonthParam(addMonths(ref, 1))}`}>Next →</Link>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Link className="btn-secondary px-3" href={qs({ month: formatMonthParam(addMonths(ref, -1)) })} aria-label="Previous month">←</Link>
+              <h2 className="min-w-40 text-center text-lg font-semibold">{label}</h2>
+              <Link className="btn-secondary px-3" href={qs({ month: formatMonthParam(addMonths(ref, 1)) })} aria-label="Next month">→</Link>
+            </div>
+            <form className="flex flex-wrap items-center gap-2" method="get">
+              <input type="hidden" name="month" value={formatMonthParam(ref)} />
+              <select name="platform" defaultValue={platform} className="input w-auto" aria-label="Filter by platform">
+                <option value="">All platforms</option>
+                {PLATFORMS.map((p) => <option key={p}>{p}</option>)}
+              </select>
+              <select name="status" defaultValue={status} className="input w-auto capitalize" aria-label="Filter by status">
+                <option value="">All statuses</option>
+                {CALENDAR_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <button className="btn-secondary">Filter</button>
+              {(platform || status) && <Link href={qs({ platform: "", status: "" })} className="text-sm text-brand hover:underline">Clear</Link>}
+            </form>
           </div>
+
+          {error && <p className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800" role="alert">Couldn&apos;t load your calendar. Refresh to try again.</p>}
 
           <div className="card hidden overflow-x-auto p-0 md:block">
             <table className="w-full table-fixed text-xs">
@@ -88,9 +115,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/social/
                             <p className={`mb-1 ${date === today ? "font-bold text-brand" : "text-muted"}`}>{Number(date.slice(8))}</p>
                             <ul className="space-y-1">
                               {(byDate.get(date) ?? []).map((e) => (
-                                <li key={e.id} className={`truncate rounded px-1 py-0.5 ${STATUS_STYLES[e.status]}`} title={`${e.title} · ${e.platform}`}>
-                                  {e.title}
-                                </li>
+                                <li key={e.id} className={`truncate rounded px-1 py-0.5 ${STATUS_DOT[e.status]}`} title={`${e.title} · ${e.platform} · ${e.status}`}>{e.title}</li>
                               ))}
                             </ul>
                           </>
@@ -104,35 +129,19 @@ export default async function CalendarPage({ searchParams }: PageProps<"/social/
           </div>
 
           <section>
-            <h2 className="mb-3 font-semibold">Posts this month ({entries.length})</h2>
+            <h2 className="mb-3 font-semibold">Posts in {label} ({entries.length}){platform || status ? " — filtered" : ""}</h2>
             {entries.length === 0 ? (
-              <p className="text-sm text-muted">No posts planned for {label}.</p>
+              <p className="card text-sm text-muted">No posts {platform || status ? "match these filters" : "planned yet"}. Add one with the form.</p>
             ) : (
-              <ul className="space-y-2">
-                {entries.map((e) => (
-                  <li key={e.id} className="card flex flex-wrap items-center gap-3 p-3 text-sm">
-                    <span className="w-24 shrink-0 text-muted">{e.scheduled_for}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="font-medium">{e.title}</span>
-                      <span className="text-muted"> · {e.platform}</span>
-                      {e.notes && <span className="block truncate text-xs text-muted">{e.notes}</span>}
-                    </span>
-                    <form action={updateCalendarStatus.bind(null, e.id)} className="flex items-center gap-1">
-                      <select name="status" defaultValue={e.status} className="input w-auto py-1" aria-label="Status">
-                        {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                      <button className="btn-secondary px-2 py-1">Update</button>
-                    </form>
-                    <form action={deleteCalendarEntry.bind(null, e.id)}>
-                      <button className="text-red-600 hover:underline">Delete</button>
-                    </form>
-                  </li>
-                ))}
+              <ul className="space-y-3">
+                {entries.map((e) => <EntryRow key={e.id} entry={e} content={content} />)}
               </ul>
             )}
           </section>
         </div>
-        <EntryForm defaultDate={defaultDate} content={(contentData ?? []) as { id: string; title: string | null }[]} />
+        <div className="card h-fit xl:sticky xl:top-6">
+          <EntryForm defaults={{ scheduled_for: defaultDate }} content={content} heading="Add a post" />
+        </div>
       </div>
     </>
   );

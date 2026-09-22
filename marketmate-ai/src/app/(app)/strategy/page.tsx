@@ -14,6 +14,7 @@ export default function StrategyHub() {
         { href: "/strategy/personas", title: T.personas.title, description: T.personas.description },
         { href: "/strategy/plan", title: T.marketing_plan.title, description: T.marketing_plan.description },
         { href: "/strategy/campaigns", title: T.campaigns.title, description: T.campaigns.description },
+        { href: "/strategy/competitors", title: T.competitor_analysis.title, description: T.competitor_analysis.description },
       ]}
     />
   );

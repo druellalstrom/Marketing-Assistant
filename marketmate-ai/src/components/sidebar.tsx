@@ -22,6 +22,7 @@ const NAV: { heading?: string; items: [href: string, label: string][] }[] = [
       ["/strategy/personas", "Customer personas"],
       ["/strategy/plan", "Marketing plan"],
       ["/strategy/campaigns", "Campaign ideas"],
+      ["/strategy/competitors", "Competitor analysis"],
     ],
   },
   { heading: "Create", items: [["/studio", "Content studio"], ["/design-studio", "Design Studio"]] },

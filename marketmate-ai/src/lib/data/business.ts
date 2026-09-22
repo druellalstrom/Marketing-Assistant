@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BusinessContext } from "@/lib/ai/prompts";
+import type { PrefillKey } from "@/lib/ai/tool-definitions";
 
 export interface BusinessRow {
   id: string;
@@ -12,6 +13,8 @@ export interface BusinessRow {
   target_audience: string | null;
   location: string | null;
   website: string | null;
+  phone: string | null;
+  email: string | null;
   social_handles: Record<string, string>;
   is_primary: boolean;
 }
@@ -65,19 +68,60 @@ export async function getBusinessContext(
   const business = await getPrimaryBusiness(supabase);
   if (!business) return { business: null, brandKit: null, context: null };
   const brandKit = await getBrandKit(supabase, business.id);
+  return { business, brandKit, context: toBusinessContext(business, brandKit) };
+}
+
+export function toBusinessContext(business: BusinessRow, brandKit: BrandKitRow | null): BusinessContext {
+  const colors = brandKit
+    ? [brandKit.primary_color && `primary ${brandKit.primary_color}`, brandKit.secondary_color && `secondary ${brandKit.secondary_color}`, brandKit.accent_color && `accent ${brandKit.accent_color}`]
+        .filter(Boolean)
+        .join(", ")
+    : "";
+  const fonts = brandKit ? [brandKit.heading_font, brandKit.body_font].filter(Boolean).join(" / ") : "";
   return {
-    business,
-    brandKit,
-    context: {
-      name: business.name,
-      industry: business.industry,
-      description: business.description,
-      products: business.products,
-      target_audience: business.target_audience,
-      location: business.location,
-      brand_voice: brandKit?.brand_voice,
-      tagline: brandKit?.tagline,
-      keywords: brandKit?.keywords,
-    },
+    name: business.name,
+    industry: business.industry,
+    description: business.description,
+    products: business.products,
+    target_audience: business.target_audience,
+    location: business.location,
+    phone: business.phone,
+    email: business.email,
+    website: business.website,
+    social_handles: business.social_handles,
+    brand_voice: brandKit?.brand_voice,
+    tagline: brandKit?.tagline,
+    keywords: brandKit?.keywords,
+    colors: colors || null,
+    fonts: fonts || null,
+  };
+}
+
+const HANDLE_PLATFORMS: Record<string, string> = {
+  instagram: "Instagram",
+  facebook: "Facebook",
+  tiktok: "TikTok",
+  linkedin: "LinkedIn",
+  x: "X (Twitter)",
+  pinterest: "Pinterest",
+  youtube: "YouTube",
+};
+
+/** Values used to pre-fill AI tool forms so users don't retype their profile. */
+export function prefillFrom(business: BusinessRow | null, brandKit: BrandKitRow | null): Partial<Record<PrefillKey, string>> {
+  if (!business) return {};
+  const platforms = Object.entries(business.social_handles ?? {})
+    .filter(([, v]) => v)
+    .map(([k]) => HANDLE_PLATFORMS[k])
+    .filter(Boolean);
+  if (business.website) platforms.push("Website");
+  return {
+    businessName: business.name,
+    industry: business.industry ?? "",
+    products: business.products ?? "",
+    location: business.location ?? "",
+    targetAudience: business.target_audience ?? "",
+    platforms: platforms.join(", "),
+    brandTone: brandKit?.brand_voice ?? "",
   };
 }

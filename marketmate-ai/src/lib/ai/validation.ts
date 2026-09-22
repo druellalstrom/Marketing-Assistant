@@ -10,7 +10,20 @@ export function schemaForTool(tool: ToolDefinition) {
   for (const field of tool.fields) {
     let s: z.ZodType;
     if (field.type === "select" && field.options) {
-      s = z.enum(field.options as unknown as [string, ...string[]]);
+      s = z.enum(field.options as unknown as [string, ...string[]], `Choose a valid ${field.label.toLowerCase()}.`);
+    } else if (field.type === "checkboxes" && field.options) {
+      // Sent as a comma-separated list; every item must be one of the options.
+      const allowed = new Set(field.options);
+      s = z
+        .string()
+        .max(1000)
+        .refine(
+          (v) => v.split(",").map((x) => x.trim()).filter(Boolean).every((x) => allowed.has(x)),
+          `${field.label} contains an invalid choice.`,
+        );
+      if (field.required) {
+        s = s.refine((v) => (v as string).trim() !== "", `Choose at least one option for ${field.label.toLowerCase()}.`);
+      }
     } else {
       const max = field.maxLength ?? DEFAULT_MAX_LENGTH;
       s = z.string().trim().max(max, `${field.label} must be ${max} characters or fewer.`);

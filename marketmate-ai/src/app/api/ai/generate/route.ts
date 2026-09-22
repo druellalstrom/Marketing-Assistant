@@ -10,6 +10,7 @@ import { buildUserPrompt, titleFor } from "@/lib/ai/prompts";
 import { getTool } from "@/lib/ai/tool-definitions";
 import { validateGenerateRequest } from "@/lib/ai/validation";
 import { getBusinessContext } from "@/lib/data/business";
+import { saveGeneration } from "@/lib/data/generations";
 
 // Long-form generations (blog posts, 90-day plans) can take a while.
 export const maxDuration = 120;
@@ -46,45 +47,24 @@ export async function POST(request: Request) {
     const result = await generateMarketingText(buildUserPrompt(toolId, input, context));
     const title = titleFor(tool.title, input);
 
-    // Save under RLS as the signed-in user (user_id defaults to auth.uid()).
-    let savedId: string | null = null;
-    let saveError: string | null = null;
-    const insert =
-      tool.storage.table === "social_content"
-        ? supabase
-            .from("social_content")
-            .insert({
-              business_id: business?.id ?? null,
-              content_type: tool.storage.contentType,
-              platform: tool.platformField ? (input[tool.platformField] ?? null) : null,
-              title,
-              body: result.text,
-              input,
-              ai_model: result.model,
-            })
-            .select("id")
-            .single()
-        : supabase
-            .from("marketing_plans")
-            .insert({
-              business_id: business?.id ?? null,
-              plan_type: tool.storage.planType,
-              title,
-              body: result.text,
-              input,
-              ai_model: result.model,
-            })
-            .select("id")
-            .single();
-    const { data, error } = await insert;
-    if (error) saveError = "Generated, but saving to your history failed.";
-    else savedId = data.id;
+    // Save under RLS as the signed-in user (user_id defaults to auth.uid()),
+    // so work is never lost on refresh.
+    const saved = await saveGeneration(supabase, {
+      tool,
+      input,
+      title,
+      body: result.text,
+      model: result.model,
+      businessId: business?.id ?? null,
+    });
 
     return NextResponse.json({
       text: result.text,
+      title,
       model: result.model,
-      savedId,
-      saveError,
+      savedId: saved.id,
+      savedTable: saved.table,
+      saveError: saved.error,
       usedBusinessProfile: Boolean(context),
     });
   } catch (err) {
