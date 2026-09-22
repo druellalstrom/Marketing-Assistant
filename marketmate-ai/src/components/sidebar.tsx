@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV: { heading?: string; items: [href: string, label: string][] }[] = [
-  { items: [["/dashboard", "Dashboard"], ["/calculator", "Pricing calculator"]] },
+  { items: [["/dashboard", "Dashboard"], ["/assistant", "AI Assistant"], ["/calculator", "Pricing calculator"], ["/library", "Saved work"]] },
   {
     heading: "Social Media Center",
     items: [

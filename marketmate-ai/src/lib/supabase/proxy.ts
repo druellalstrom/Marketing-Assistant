@@ -11,6 +11,8 @@ export const PROTECTED_PREFIXES = [
   "/business",
   "/brand-kit",
   "/design-studio",
+  "/assistant",
+  "/library",
 ];
 
 export function isProtectedPath(pathname: string): boolean {

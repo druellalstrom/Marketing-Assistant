@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AiGenerator } from "@/components/ai-generator";
 import { PageHeader } from "@/components/page-header";
+import { ConfirmButton } from "@/components/confirm-button";
 import { deleteHistoryItem } from "@/components/history-actions";
 import { isAnthropicConfigured } from "@/lib/ai/anthropic";
 import { getTool, type ToolId } from "@/lib/ai/tool-definitions";
@@ -58,7 +59,7 @@ export async function ToolPage({ toolId, path, children }: { toolId: ToolId; pat
                 </span>
                 <Link href={libraryHref(tool.storage.table, h.id)} className="text-brand hover:underline">Open</Link>
                 <form action={deleteHistoryItem.bind(null, tool.storage.table, h.id, path)}>
-                  <button className="text-red-600 hover:underline">Delete</button>
+                  <ConfirmButton message="Delete this from your library?" className="text-red-600 hover:underline">Delete</ConfirmButton>
                 </form>
               </li>
             ))}

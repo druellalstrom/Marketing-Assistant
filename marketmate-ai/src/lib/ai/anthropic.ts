@@ -46,16 +46,19 @@ export interface GenerationResult {
   model: string;
 }
 
-export async function generateMarketingText(userPrompt: string): Promise<GenerationResult> {
-  const anthropic = getClient();
+type CreateParams = Omit<Anthropic.Beta.Messages.MessageCreateParamsNonStreaming, "model" | "betas" | "fallbacks">;
 
+/**
+ * The one place the app calls the Messages API. Adds the model, the refusal
+ * fallback, and maps SDK errors to safe, user-facing messages.
+ */
+export async function callClaude(params: CreateParams): Promise<Anthropic.Beta.Messages.BetaMessage> {
+  const anthropic = getClient();
   let response;
   try {
     response = await anthropic.beta.messages.create({
+      ...params,
       model: AI_MODEL,
-      max_tokens: 16000,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userPrompt }],
       // If the primary model declines, the API retries on Anthropic's recommended fallback.
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
@@ -75,19 +78,26 @@ export async function generateMarketingText(userPrompt: string): Promise<Generat
     }
     throw err;
   }
-
   if (response.stop_reason === "refusal") {
-    throw new AiGenerationError(
-      "The AI declined this request. Try rephrasing it.",
-      422,
-    );
+    throw new AiGenerationError("The AI declined this request. Try rephrasing it.", 422);
   }
+  return response;
+}
 
-  const text = response.content
+export function textOf(response: Anthropic.Beta.Messages.BetaMessage): string {
+  return response.content
     .flatMap((block) => (block.type === "text" ? [block.text] : []))
     .join("")
     .trim();
+}
 
+export async function generateMarketingText(userPrompt: string): Promise<GenerationResult> {
+  const response = await callClaude({
+    max_tokens: 16000,
+    system: SYSTEM_PROMPT,
+    messages: [{ role: "user", content: userPrompt }],
+  });
+  const text = textOf(response);
   if (!text) throw new AiGenerationError("The AI returned an empty response.", 502);
 
   const truncated = response.stop_reason === "max_tokens";
