@@ -2,6 +2,7 @@ import "server-only";
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { getSupabasePublicEnv } from "@/lib/env";
@@ -12,6 +13,9 @@ import { getSupabasePublicEnv } from "@/lib/env";
  * that user. Returns null when Supabase isn't configured.
  */
 export async function createClient(): Promise<SupabaseClient | null> {
+  // Always render per request: auth state must never be baked into a static page,
+  // even when the build runs without Supabase env vars.
+  await connection();
   const env = getSupabasePublicEnv();
   if (!env) return null;
   const cookieStore = await cookies();

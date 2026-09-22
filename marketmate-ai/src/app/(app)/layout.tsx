@@ -1,9 +1,11 @@
+import { connection } from "next/server";
 import { Sidebar } from "@/components/sidebar";
 import { isSupabaseConfigured } from "@/lib/env";
 import { getAuthContext } from "@/lib/supabase/server";
 import { signOut } from "../(auth)/actions";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
+  await connection(); // the sidebar shows who is signed in, so never prerender
   const configured = isSupabaseConfigured();
   const auth = configured ? await getAuthContext() : null;
 

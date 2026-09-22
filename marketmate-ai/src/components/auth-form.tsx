@@ -1,5 +1,6 @@
 "use client";
 
+import { preservingSubmit } from "@/components/use-preserving-submit";
 import Link from "next/link";
 import { useActionState } from "react";
 import type { AuthFormState } from "@/app/(auth)/actions";
@@ -16,7 +17,7 @@ export function AuthForm({ mode, action, next, supabaseConfigured }: Props) {
   const isSignup = mode === "signup";
 
   return (
-    <form action={formAction} className="card space-y-4">
+    <form onSubmit={preservingSubmit(formAction)} className="card space-y-4">
       {!supabaseConfigured && (
         <p className="rounded-lg bg-amber-100 p-3 text-sm text-amber-900">
           Supabase isn&apos;t configured yet, so accounts are disabled. Add your Supabase URL and
