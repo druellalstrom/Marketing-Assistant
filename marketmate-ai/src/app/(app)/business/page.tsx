@@ -19,7 +19,7 @@ export default async function BusinessPage() {
         title="Business profile"
         description="Tell MarketMate about your business once. Every AI tool, the assistant and the Design Studio use it automatically."
       />
-      <div className="grid gap-6 xl:grid-cols-[1fr_300px]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_300px]">
         <BusinessForm defaults={business} />
         <aside className="card h-fit space-y-3 text-sm">
           <h2 className="font-semibold">Logo, colours &amp; tone</h2>

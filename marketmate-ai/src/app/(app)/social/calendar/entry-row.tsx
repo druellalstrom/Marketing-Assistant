@@ -36,7 +36,7 @@ export function EntryRow({ entry, content }: { entry: Required<Pick<CalendarEntr
         </div>
         <span className={`rounded-full px-2 py-0.5 text-xs capitalize ${STATUS_STYLES[entry.status]}`}>{entry.status}</span>
       </div>
-      {entry.caption && <p className="line-clamp-3 whitespace-pre-wrap text-muted">{entry.caption}</p>}
+      {entry.caption && <p className="line-clamp-3 whitespace-pre-wrap [overflow-wrap:anywhere] text-muted">{entry.caption}</p>}
       {entry.cta && <p className="text-xs"><span className="text-muted">CTA:</span> {entry.cta}</p>}
       <div className="flex flex-wrap gap-3 pt-1">
         <button type="button" className="text-brand hover:underline" onClick={() => setEditing(true)}>Edit</button>

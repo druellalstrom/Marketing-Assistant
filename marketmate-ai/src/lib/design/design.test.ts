@@ -3,11 +3,14 @@ import { buildImagePrompt, designBriefSchema, uploadsBelongToUser } from "./brie
 import { getImageProvider, NotConnectedProvider } from "./provider";
 
 const brief = designBriefSchema.parse({
-  designType: "Instagram post (1:1)",
+  designType: "Promotional poster",
   style: "Clean & minimal",
   businessName: "Glow Co",
   productName: "Lavender candle",
   price: "$24",
+  promotion: "20% off this weekend",
+  contact: "hello@glow.example",
+  handles: "@glowco",
   colors: { primary: "#112233", secondary: "#FFFFFF", accent: "#FF8800" },
   uploads: { logo: "user-1/logo.png" },
 });
@@ -18,6 +21,10 @@ describe("design brief", () => {
     expect(p).toContain('"Glow Co"');
     expect(p).toContain("Lavender candle");
     expect(p).toContain('"$24"');
+    expect(p).toContain("20% off this weekend");
+    expect(p).toContain("hello@glow.example");
+    expect(p).toContain("@glowco");
+    expect(p).toMatch(/^Promotional poster/);
     expect(p).toContain("#FF8800");
     expect(p).toContain("supplied logo");
     expect(p).not.toContain("product photo");

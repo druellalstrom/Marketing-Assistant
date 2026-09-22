@@ -7,7 +7,7 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 
 export const metadata: Metadata = {
   title: { default: "MarketMate AI", template: "%s · MarketMate AI" },
-  description: "Pricing, marketing strategy and social content for small businesses.",
+  description: "Your AI Marketing Department — pricing, strategy, content and campaigns for small businesses.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

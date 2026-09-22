@@ -102,7 +102,7 @@ export function AssistantChat({ initial, aiConfigured, businessName }: { initial
         )}
         {messages.map((m) => (
           <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${m.role === "user" ? "bg-brand text-brand-foreground" : "border border-border bg-background"}`}>
+            <div className={`max-w-[85%] whitespace-pre-wrap [overflow-wrap:anywhere] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${m.role === "user" ? "bg-brand text-brand-foreground" : "border border-border bg-background"}`}>
               {m.content}
               {m.role === "assistant" && (
                 <button type="button" className="mt-2 block text-xs text-muted hover:text-brand" onClick={() => void navigator.clipboard.writeText(m.content)}>Copy</button>

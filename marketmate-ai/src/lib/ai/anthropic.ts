@@ -73,6 +73,10 @@ export async function callClaude(params: CreateParams): Promise<Anthropic.Beta.M
     if (err instanceof Anthropic.APIConnectionError) {
       throw new AiGenerationError("Couldn't reach the AI service. Please try again.", 503);
     }
+    if (err instanceof Anthropic.APIError && typeof err.status === "number" && err.status >= 500) {
+      // 529 = overloaded; other 5xx are transient service errors. The SDK has already retried.
+      throw new AiGenerationError("The AI service is busy right now. Please try again in a moment.", 503);
+    }
     if (err instanceof Anthropic.APIError) {
       throw new AiGenerationError(`AI request failed (${err.status ?? "unknown"}).`, 502);
     }

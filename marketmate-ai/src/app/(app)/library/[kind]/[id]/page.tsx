@@ -66,12 +66,12 @@ export default async function LibraryItemPage({ params }: PageProps<"/library/[k
             No image was generated: image generation is not connected yet. The brief, copy and uploads are saved.
           </p>
         )}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <section className="card">
             <h2 className="mb-3 font-semibold">Brief</h2>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
               {details.filter(([, v]) => v).map(([k, v]) => (
-                <div key={k} className="contents"><dt className="text-muted">{k}</dt><dd className="whitespace-pre-wrap">{String(v)}</dd></div>
+                <div key={k} className="contents"><dt className="text-muted">{k}</dt><dd className="whitespace-pre-wrap [overflow-wrap:anywhere]">{String(v)}</dd></div>
               ))}
               {Object.keys(colors).length > 0 && (
                 <div className="contents">
@@ -86,13 +86,13 @@ export default async function LibraryItemPage({ params }: PageProps<"/library/[k
             {typeof brief.copy === "string" && brief.copy && (
               <div className="card">
                 <h2 className="mb-2 font-semibold">Marketing copy</h2>
-                <div className="whitespace-pre-wrap text-sm">{brief.copy}</div>
+                <div className="whitespace-pre-wrap [overflow-wrap:anywhere] text-sm">{brief.copy}</div>
               </div>
             )}
             {typeof brief.prompt === "string" && (
               <div className="card">
                 <h2 className="mb-2 font-semibold">Image prompt</h2>
-                <p className="whitespace-pre-wrap rounded-lg bg-background p-3 font-mono text-xs">{brief.prompt}</p>
+                <p className="whitespace-pre-wrap [overflow-wrap:anywhere] rounded-lg bg-background p-3 font-mono text-xs">{brief.prompt}</p>
               </div>
             )}
           </section>

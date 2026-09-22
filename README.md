@@ -12,15 +12,20 @@ The app lives in [`marketmate-ai/`](marketmate-ai/) — see its
   prices (including sales fees), profit per unit, margin, markup and break-even.
 - **Social Media Center** — caption generator, hashtag generator, content ideas,
   content repurposing and a content calendar.
-- **Marketing strategy** — target audience analysis, customer personas, a 90-day
-  marketing plan and campaign ideas.
-- **Content Creation Studio** — product descriptions, emails, blog posts, ad copy
-  and short video scripts.
+- **Marketing strategy** — target audience analysis, customer personas, marketing plans,
+  campaign ideas and competitor analysis (based only on information you provide).
+- **Content Creation Studio** — product descriptions, ads, email campaigns, TikTok scripts,
+  social posts, website copy, CTAs and launch announcements, with tone, length and objective.
 - **Business profile & brand kit** — colours, fonts, logo and brand voice, used by
   every AI tool.
-- **Dashboard** — setup checklist, connection status and recent activity.
-- **Design Studio** — brief-to-graphic workflow. Image generation is **not connected
-  yet**; briefs and uploads are saved, but no image is produced until a provider is added.
+- **AI Marketing Assistant** — chat that knows your business, uses the calculator for real
+  pricing numbers, and saves business details you mention to your profile.
+- **Saved work** — every design, post, calculation, plan and campaign: open, edit, duplicate,
+  rename, delete.
+- **Dashboard** — quick actions, business profile, recent projects and upcoming posts.
+- **Design Studio** — posters, flyers, social graphics, ads, business cards and banners from
+  one brief, with AI-written copy. Image generation is **not connected yet**; briefs, copy and
+  uploads are saved, but no image is produced until a provider is added.
 
 ## Tech stack
 

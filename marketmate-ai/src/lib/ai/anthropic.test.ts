@@ -97,6 +97,15 @@ describe("generateMarketingText", () => {
     });
   });
 
+  it("turns overloaded/server errors into a friendly retryable message", async () => {
+    nextResponse = { status: 529, body: { type: "error", error: { type: "overloaded_error", message: "Overloaded" } } };
+    const { generateMarketingText } = await import("./anthropic");
+    await expect(generateMarketingText("x")).rejects.toMatchObject({
+      status: 503,
+      message: "The AI service is busy right now. Please try again in a moment.",
+    });
+  }, 30000);
+
   it("refuses to run without a key", async () => {
     const saved = process.env.ANTHROPIC_API_KEY;
     delete process.env.ANTHROPIC_API_KEY;

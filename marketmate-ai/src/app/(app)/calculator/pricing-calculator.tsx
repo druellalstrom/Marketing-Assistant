@@ -133,7 +133,7 @@ export function PricingCalculator({ canSave, initial, savedId }: { canSave: bool
   const q = Number.isFinite(input.quantity) ? input.quantity : 0;
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,480px)_1fr]">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,480px)_1fr]">
       <div className="space-y-6">
         <fieldset className="card space-y-3">
           <legend className="px-1 text-sm font-semibold">Product</legend>

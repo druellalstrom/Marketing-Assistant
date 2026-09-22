@@ -32,7 +32,8 @@ export function ResultActions({ text, filename, onRegenerate, regenerating, onSa
     }
   }
 
-  function exportFile(ext: "md" | "txt") {
+  function exportFile(ext: "md" | "txt", menu: HTMLElement | null) {
+    menu?.closest("details")?.removeAttribute("open");
     const blob = new Blob([text], { type: ext === "md" ? "text/markdown" : "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -60,8 +61,8 @@ export function ResultActions({ text, filename, onRegenerate, regenerating, onSa
       <details className="relative">
         <summary className="btn-secondary cursor-pointer list-none">Export</summary>
         <div className="absolute z-10 mt-1 flex w-40 flex-col rounded-lg border border-border bg-card p-1 shadow-md">
-          <button type="button" className="rounded px-3 py-2 text-left text-sm hover:bg-background" onClick={() => exportFile("md")}>Markdown (.md)</button>
-          <button type="button" className="rounded px-3 py-2 text-left text-sm hover:bg-background" onClick={() => exportFile("txt")}>Plain text (.txt)</button>
+          <button type="button" className="rounded px-3 py-2 text-left text-sm hover:bg-background" onClick={(e) => exportFile("md", e.currentTarget)}>Markdown (.md)</button>
+          <button type="button" className="rounded px-3 py-2 text-left text-sm hover:bg-background" onClick={(e) => exportFile("txt", e.currentTarget)}>Plain text (.txt)</button>
         </div>
       </details>
       {onDuplicate && (

@@ -26,7 +26,7 @@ export function BrandKitForm({ defaults, userId, businessName, handles }: { defa
   });
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_320px]">
       <form onSubmit={preservingSubmit(action)} className="card space-y-4">
         <fieldset>
           <legend className="label">Brand colours</legend>
