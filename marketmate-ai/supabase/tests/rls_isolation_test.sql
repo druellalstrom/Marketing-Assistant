@@ -24,6 +24,9 @@ insert into public.content_calendar_entries (social_content_id, title, platform,
   values ('a0000000-0000-0000-0000-0000000000c1', 'Post', 'instagram', '2026-10-01');
 insert into public.designs (business_id, project_id, status) values ('a0000000-0000-0000-0000-00000000000a', 'a0000000-0000-0000-0000-0000000000a1', 'not_connected');
 insert into storage.objects (bucket_id, name) values ('design-uploads', 'aaaaaaaa-0000-0000-0000-000000000001/logo.png');
+insert into public.campaigns (business_id, name, campaign_type, body) values ('a0000000-0000-0000-0000-00000000000a', 'Holiday sale', 'holiday', 'Plan');
+insert into public.assistant_messages (role, content) values ('user', 'I sell handmade candles in Barbados.');
+update public.businesses set phone = '+1 246 555 0100', email = 'hello@alicecandles.example';
 
 -- ---- act as Bob ----
 select set_config('request.jwt.claim.sub', 'bbbbbbbb-0000-0000-0000-000000000002', false);
@@ -31,7 +34,7 @@ do $$
 declare t text; n int;
 begin
   foreach t in array array['businesses','brand_kits','projects','designs','social_content',
-    'pricing_calculations','marketing_plans','content_calendar_entries'] loop
+    'pricing_calculations','marketing_plans','content_calendar_entries','campaigns','assistant_messages'] loop
     execute format('select count(*) from public.%I', t) into n;
     assert n = 0, format('Bob can see %s rows in %s', n, t);
   end loop;
@@ -70,6 +73,10 @@ do $$ begin
   begin
     insert into public.designs (project_id) values ('a0000000-0000-0000-0000-0000000000a1');
     raise exception 'FAIL: cross-user design';
+  exception when foreign_key_violation then null; end;
+  begin
+    insert into public.campaigns (business_id, name) values ('a0000000-0000-0000-0000-00000000000a', 'x');
+    raise exception 'FAIL: cross-user campaign';
   exception when foreign_key_violation then null; end;
 end $$;
 
@@ -116,6 +123,23 @@ do $$ begin
     insert into public.businesses (name, is_primary) values ('Second primary', true);
     raise exception 'FAIL: two primary businesses';
   exception when unique_violation then null; end;
+end $$;
+
+do $$ begin
+  begin
+    update public.businesses set email = 'not-an-email';
+    raise exception 'FAIL: bad email accepted';
+  exception when check_violation then null; end;
+  begin
+    insert into public.campaigns (name, start_date, end_date) values ('x', '2026-10-10', '2026-10-01');
+    raise exception 'FAIL: campaign end before start';
+  exception when check_violation then null; end;
+  begin
+    insert into public.assistant_messages (role, content) values ('system', 'x');
+    raise exception 'FAIL: bad assistant role';
+  exception when check_violation then null; end;
+  assert (select count(*) from public.assistant_messages) = 1;
+  assert (select count(*) from public.campaigns) = 1;
 end $$;
 
 -- Deleting a project nulls project_id but keeps user_id (column-list SET NULL).

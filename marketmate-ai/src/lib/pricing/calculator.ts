@@ -6,7 +6,12 @@
  *   - Profit margin = (price − cost) / price          (share of the price that is profit)
  *   - Markup        = (price − cost) / cost           (how much you add on top of cost)
  *   - Contribution per unit = net revenue per unit − unit cost
- *   - Break-even units = fixed costs / contribution per unit (rounded UP to whole units)
+ *   - Break-even units = costs to recover / profit contributed per unit (rounded UP)
+ *
+ * A "production run" is one batch you make (e.g. 100 candles). Every cost is
+ * entered either as a total for the run or per unit; both are normalised to a
+ * run total and a per-unit amount. Break-even answers: how many of this run
+ * must I sell to earn back everything I spent making it?
  *
  * Percentages are passed in as human numbers (40 means 40%), never as 0.4.
  * Money values are plain numbers in the user's currency; rounding to cents is
@@ -25,13 +30,14 @@ export class PricingInputError extends Error {
 
 /** Human-readable names for error messages. */
 const FIELD_LABELS: Record<string, string> = {
-  materialCostPerBatch: "Materials cost",
-  laborHoursPerBatch: "Labour hours",
-  laborRatePerHour: "Labour rate",
-  otherCostPerBatch: "Other batch costs",
-  unitsPerBatch: "Units per batch",
-  packagingCostPerUnit: "Packaging per unit",
-  monthlyFixedCosts: "Monthly fixed costs",
+  quantity: "Quantity produced",
+  materials: "Material costs",
+  packaging: "Packaging costs",
+  labor: "Labour costs",
+  transportation: "Transportation / gas",
+  electricity: "Electricity",
+  marketing: "Marketing expenses",
+  other: "Other expenses",
   targetRetailMarginPct: "Target retail margin",
   targetWholesaleMarginPct: "Target wholesale margin",
   targetMarginPct: "Target margin",
@@ -81,59 +87,64 @@ export function roundPercent(value: number): number {
 }
 
 // ---------------------------------------------------------------------------
-// Cost per unit
+// Production cost
 // ---------------------------------------------------------------------------
 
-export interface UnitCostInput {
-  /** Total materials/ingredients cost for one batch. */
-  materialCostPerBatch: number;
-  /** Hours of labour to produce one batch. */
-  laborHoursPerBatch: number;
-  /** What you pay (or want to pay yourself) per labour hour. */
-  laborRatePerHour: number;
-  /** Any other per-batch variable cost (equipment wear, shipping in supplies, etc.). */
-  otherCostPerBatch: number;
-  /** Number of sellable units a batch produces. */
-  unitsPerBatch: number;
-  /** Packaging / labels per unit. */
-  packagingCostPerUnit: number;
+export const COST_CATEGORIES = [
+  "materials",
+  "packaging",
+  "labor",
+  "transportation",
+  "electricity",
+  "marketing",
+  "other",
+] as const;
+export type CostCategory = (typeof COST_CATEGORIES)[number];
+
+/** "total" = amount for the whole production run; "per_unit" = amount for each unit. */
+export type CostBasis = "total" | "per_unit";
+
+export interface CostLine {
+  amount: number;
+  basis: CostBasis;
 }
 
-export interface UnitCostBreakdown {
-  materialPerUnit: number;
-  laborPerUnit: number;
-  otherPerUnit: number;
-  packagingPerUnit: number;
-  totalBatchCost: number;
+export type ProductionCosts = Record<CostCategory, CostLine>;
+
+export interface CostLineResult {
+  category: CostCategory;
+  total: number;
+  perUnit: number;
+}
+
+export interface ProductionCostBreakdown {
+  quantity: number;
+  lines: CostLineResult[];
+  totalProductionCost: number;
   costPerUnit: number;
 }
 
-export function calculateUnitCost(input: UnitCostInput): UnitCostBreakdown {
-  assertFiniteNonNegative("materialCostPerBatch", input.materialCostPerBatch);
-  assertFiniteNonNegative("laborHoursPerBatch", input.laborHoursPerBatch);
-  assertFiniteNonNegative("laborRatePerHour", input.laborRatePerHour);
-  assertFiniteNonNegative("otherCostPerBatch", input.otherCostPerBatch);
-  assertPositive("unitsPerBatch", input.unitsPerBatch);
-  assertFiniteNonNegative("packagingCostPerUnit", input.packagingCostPerUnit);
-
-  const laborBatch = input.laborHoursPerBatch * input.laborRatePerHour;
-  const materialPerUnit = input.materialCostPerBatch / input.unitsPerBatch;
-  const laborPerUnit = laborBatch / input.unitsPerBatch;
-  const otherPerUnit = input.otherCostPerBatch / input.unitsPerBatch;
-  const packagingPerUnit = input.packagingCostPerUnit;
-
-  return {
-    materialPerUnit,
-    laborPerUnit,
-    otherPerUnit,
-    packagingPerUnit,
-    totalBatchCost:
-      input.materialCostPerBatch +
-      laborBatch +
-      input.otherCostPerBatch +
-      packagingPerUnit * input.unitsPerBatch,
-    costPerUnit: materialPerUnit + laborPerUnit + otherPerUnit + packagingPerUnit,
-  };
+/**
+ * Normalises every cost to a run total and a per-unit amount.
+ * Example: materials $300 (total) over 100 units → $3.00 per unit.
+ */
+export function calculateProductionCost(quantity: number, costs: ProductionCosts): ProductionCostBreakdown {
+  assertPositive("quantity", quantity);
+  if (!Number.isInteger(quantity)) {
+    throw new PricingInputError("quantity", "Quantity produced must be a whole number.");
+  }
+  const lines = COST_CATEGORIES.map((category): CostLineResult => {
+    const line = costs[category];
+    assertFiniteNonNegative(category, line?.amount);
+    if (line.basis !== "total" && line.basis !== "per_unit") {
+      throw new PricingInputError(category, `${label(category)} must be a total or a per-unit amount.`);
+    }
+    return line.basis === "total"
+      ? { category, total: line.amount, perUnit: line.amount / quantity }
+      : { category, total: line.amount * quantity, perUnit: line.amount };
+  });
+  const totalProductionCost = lines.reduce((sum, l) => sum + l.total, 0);
+  return { quantity, lines, totalProductionCost, costPerUnit: totalProductionCost / quantity };
 }
 
 // ---------------------------------------------------------------------------
@@ -319,39 +330,53 @@ export function breakEven(
 }
 
 // ---------------------------------------------------------------------------
-// Full calculator (what the UI calls)
+// Full calculator (what the UI and the AI assistant call)
 // ---------------------------------------------------------------------------
 
-export interface PricingCalculatorInput extends UnitCostInput {
-  /** Monthly fixed costs (rent, software, insurance…). */
-  monthlyFixedCosts: number;
-  /** Margin you want on direct-to-customer (retail) sales. */
+export interface PricingCalculatorInput {
+  quantity: number;
+  costs: ProductionCosts;
+  /** Profit margin you want on direct-to-customer (retail) sales, after fees. */
   targetRetailMarginPct: number;
-  /** Margin you want on wholesale sales to shops. */
+  /** Profit margin you want when selling wholesale to shops. */
   targetWholesaleMarginPct: number;
-  /** Fees on retail sales (card processing, Etsy, Shopify…). */
+  /** Fees on retail sales (card processing, Etsy, Shopify…). Wholesale is assumed invoiced, fee-free. */
   retailFees: SalesFees;
   /** Optional: evaluate a price you already charge (or are considering). */
   actualRetailPrice?: number | null;
 }
 
+export interface ChannelResult extends UnitEconomics {
+  /** Profit if the whole production run sells at this price. */
+  totalPotentialProfit: number;
+  /** Revenue if the whole production run sells at this price. */
+  totalPotentialRevenue: number;
+  /** Units of this run you must sell to earn back the total production cost. */
+  breakEven: BreakEvenResult;
+}
+
 export interface PricingCalculatorResult {
-  unitCost: UnitCostBreakdown;
-  suggestedRetailPrice: number;
-  suggestedWholesalePrice: number;
-  retail: UnitEconomics;
-  wholesale: UnitEconomics;
-  /** Economics at the user's actual price, if one was provided. */
-  actual: UnitEconomics | null;
-  breakEvenRetail: BreakEvenResult;
-  breakEvenWholesale: BreakEvenResult;
-  breakEvenActual: BreakEvenResult | null;
+  production: ProductionCostBreakdown;
+  retail: ChannelResult;
+  wholesale: ChannelResult;
+  /** Results at the user's own price, if one was provided. */
+  actual: ChannelResult | null;
   warnings: string[];
 }
 
+function channel(price: number, production: ProductionCostBreakdown, fees: SalesFees): ChannelResult {
+  const econ = unitEconomics(price, production.costPerUnit, fees);
+  return {
+    ...econ,
+    totalPotentialProfit: econ.profitPerUnit * production.quantity,
+    totalPotentialRevenue: price * production.quantity,
+    // Everything was spent up front, so each sale recovers its net revenue.
+    breakEven: breakEven(production.totalProductionCost, price, 0, fees),
+  };
+}
+
 export function runPricingCalculator(input: PricingCalculatorInput): PricingCalculatorResult {
-  const unitCost = calculateUnitCost(input);
-  const cost = unitCost.costPerUnit;
+  const production = calculateProductionCost(input.quantity, input.costs);
   // Validate targets under their own names so errors point at the right field.
   assertPercentBelow100("targetRetailMarginPct", input.targetRetailMarginPct);
   assertPercentBelow100("targetWholesaleMarginPct", input.targetWholesaleMarginPct);
@@ -363,54 +388,38 @@ export function runPricingCalculator(input: PricingCalculatorInput): PricingCalc
     );
   }
 
-  // Wholesale is typically sold by invoice with no per-sale platform fees.
-  const suggestedWholesalePrice = priceForTargetMargin(cost, input.targetWholesaleMarginPct);
-  const suggestedRetailPrice = priceForTargetMargin(
-    cost,
-    input.targetRetailMarginPct,
-    input.retailFees,
-  );
-
-  const retail = unitEconomics(suggestedRetailPrice, cost, input.retailFees);
-  const wholesale = unitEconomics(suggestedWholesalePrice, cost);
+  const cost = production.costPerUnit;
+  const retail = channel(priceForTargetMargin(cost, input.targetRetailMarginPct, input.retailFees), production, input.retailFees);
+  const wholesale = channel(priceForTargetMargin(cost, input.targetWholesaleMarginPct), production, NO_FEES);
 
   const hasActual =
     input.actualRetailPrice !== undefined &&
     input.actualRetailPrice !== null &&
     !Number.isNaN(input.actualRetailPrice);
-  const actual = hasActual
-    ? unitEconomics(input.actualRetailPrice as number, cost, input.retailFees)
-    : null;
+  if (hasActual) assertFiniteNonNegative("price", input.actualRetailPrice as number);
+  const actual = hasActual ? channel(input.actualRetailPrice as number, production, input.retailFees) : null;
 
   const warnings: string[] = [];
-  if (suggestedWholesalePrice > suggestedRetailPrice) {
+  if (wholesale.price > retail.price) {
     warnings.push(
       "Suggested wholesale price is higher than retail. Shops usually need to buy at roughly half of retail — raise your retail margin or lower your wholesale margin.",
     );
-  } else if (suggestedRetailPrice > 0 && suggestedWholesalePrice / suggestedRetailPrice > 0.6) {
+  } else if (retail.price > 0 && wholesale.price / retail.price > 0.6) {
     warnings.push(
       "Wholesale is more than 60% of retail, which leaves stockists little room for their own markup (they typically double wholesale).",
     );
   }
   if (actual && actual.profitPerUnit < 0) {
-    warnings.push("Your current price is below your cost after fees — every sale loses money.");
+    warnings.push("Your price is below your cost after fees — every sale loses money.");
   }
-  if (input.laborRatePerHour === 0 && input.laborHoursPerBatch > 0) {
-    warnings.push("Labour is costed at $0/hour. Pay yourself — otherwise your profit figures are overstated.");
+  if (actual?.breakEven.units != null && actual.breakEven.units > production.quantity) {
+    warnings.push(
+      `At your price you would need to sell ${actual.breakEven.units} units to break even, but this run only makes ${production.quantity}.`,
+    );
+  }
+  if (input.costs.labor.amount === 0) {
+    warnings.push("Labour is $0. Pay yourself — otherwise your profit figures are overstated.");
   }
 
-  return {
-    unitCost,
-    suggestedRetailPrice,
-    suggestedWholesalePrice,
-    retail,
-    wholesale,
-    actual,
-    breakEvenRetail: breakEven(input.monthlyFixedCosts, suggestedRetailPrice, cost, input.retailFees),
-    breakEvenWholesale: breakEven(input.monthlyFixedCosts, suggestedWholesalePrice, cost),
-    breakEvenActual: actual
-      ? breakEven(input.monthlyFixedCosts, actual.price, cost, input.retailFees)
-      : null,
-    warnings,
-  };
+  return { production, retail, wholesale, actual, warnings };
 }
