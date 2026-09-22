@@ -1,30 +1,37 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Baby Registry</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    .item { border: 1px solid #ccc; padding: 10px; margin: 10px; }
-    .item h3 { margin: 0; }
-    .purchased { color: green; font-weight: bold; }
-  </style>
-</head>
-<body>
-  <h1>Welcome to Our Baby Registry</h1>
-  <p>Due Date: June 2026</p>
+# MarketMate AI
 
-  <div class="item">
-    <h3>Crib</h3>
-    <p>Safe and sturdy crib for newborn.</p>
-    <a href="https://www.amazon.com/example">Buy here</a>
-    <p class="purchased">Not yet purchased</p>
-  </div>
+An all-in-one marketing assistant for small businesses: accurate pricing math,
+AI-written social content and marketing strategy, all tailored to your brand.
 
-  <div class="item">
-    <h3>Diapers</h3>
-    <p>Eco-friendly size 1 diapers.</p>
-    <a href="https://www.target.com/example">Buy here</a>
-    <p class="purchased">Not yet purchased</p>
-  </div>
-</body>
-</html>
+The app lives in [`marketmate-ai/`](marketmate-ai/) — see its
+[README](marketmate-ai/README.md) for setup, environment variables and scripts.
+
+## Features
+
+- **Pricing & business calculator** — cost per unit, suggested retail and wholesale
+  prices (including sales fees), profit per unit, margin, markup and break-even.
+- **Social Media Center** — caption generator, hashtag generator, content ideas,
+  content repurposing and a content calendar.
+- **Marketing strategy** — target audience analysis, customer personas, a 90-day
+  marketing plan and campaign ideas.
+- **Content Creation Studio** — product descriptions, emails, blog posts, ad copy
+  and short video scripts.
+- **Business profile & brand kit** — colours, fonts, logo and brand voice, used by
+  every AI tool.
+- **Dashboard** — setup checklist, connection status and recent activity.
+- **Design Studio** — brief-to-graphic workflow. Image generation is **not connected
+  yet**; briefs and uploads are saved, but no image is produced until a provider is added.
+
+## Tech stack
+
+Next.js 16 (App Router) · TypeScript · Tailwind CSS · Supabase (Postgres, Auth,
+Storage, Row Level Security) · Anthropic API (server-side only).
+
+## Quick start
+
+```bash
+cd marketmate-ai
+npm install
+cp .env.example .env.local   # add your Supabase and Anthropic keys
+npm run dev
+```
