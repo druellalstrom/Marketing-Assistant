@@ -28,7 +28,7 @@ export function EntryRow({ entry, content }: { entry: Required<Pick<CalendarEntr
       <div className="flex flex-wrap items-start gap-2">
         <div className="min-w-0 flex-1">
           <p className="font-medium">{entry.title}</p>
-          <p className="text-xs text-muted">
+          <p className="text-sm text-muted">
             {entry.scheduled_for} · {entry.platform}
             {entry.content_type ? ` · ${entry.content_type}` : ""}
             {entry.topic ? ` · ${entry.topic}` : ""}

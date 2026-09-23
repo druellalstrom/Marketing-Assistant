@@ -86,7 +86,7 @@ function MarginInput({ id, label, value, onChange, help }: { id: string; label: 
           <span className="pointer-events-none absolute right-3 top-2 text-sm text-muted">%</span>
         </div>
       </div>
-      <p className="mt-1 text-xs text-muted">{help}</p>
+      <p className="mt-1 text-sm text-muted">{help}</p>
     </div>
   );
 }
@@ -144,7 +144,7 @@ export function PricingCalculator({ canSave, initial, savedId }: { canSave: bool
           <div>
             <label className="label" htmlFor="quantity">Quantity produced</label>
             <input id="quantity" className={`input tabular-nums ${errField === "quantity" ? "border-red-500" : ""}`} type="number" min={1} step={1} inputMode="numeric" value={form.quantity} onChange={(e) => update({ quantity: e.target.value })} />
-            <p className="mt-1 text-xs text-muted">How many units this production run makes.</p>
+            <p className="mt-1 text-sm text-muted">How many units this production run makes.</p>
           </div>
         </fieldset>
 
@@ -166,7 +166,7 @@ export function PricingCalculator({ canSave, initial, savedId }: { canSave: bool
                       <option value="per_unit">per unit</option>
                     </select>
                   </div>
-                  <p className="mt-1 text-xs text-muted">
+                  <p className="mt-1 text-sm text-muted">
                     {line && line.total > 0 ? `${money(line.total)} total · ${money(line.perUnit)} per unit` : COST_LABELS[c].hint}
                   </p>
                 </div>
@@ -188,7 +188,7 @@ export function PricingCalculator({ canSave, initial, savedId }: { canSave: bool
               <label className="label" htmlFor="fixedFee">Fee per sale ($)</label>
               <input id="fixedFee" className={`input tabular-nums ${errField === "fixedFeePerSale" ? "border-red-500" : ""}`} type="number" min={0} step="any" value={form.fixedFee} onChange={(e) => update({ fixedFee: e.target.value })} />
             </div>
-            <p className="col-span-2 -mt-1 text-xs text-muted">Card processing or marketplace fees on retail sales (e.g. 2.9% + $0.30). Leave 0 if none.</p>
+            <p className="col-span-2 -mt-1 text-sm text-muted">Card processing or marketplace fees on retail sales (e.g. 2.9% + $0.30). Leave 0 if none.</p>
           </div>
           <div>
             <label className="label" htmlFor="actualPrice">Your current price ($, optional)</label>
@@ -207,12 +207,12 @@ export function PricingCalculator({ canSave, initial, savedId }: { canSave: bool
               <div className="card">
                 <p className="text-sm text-muted">Total production cost</p>
                 <p className="mt-1 text-3xl font-bold tabular-nums">{money(r.production.totalProductionCost)}</p>
-                <p className="mt-1 text-xs text-muted">for {r.production.quantity.toLocaleString()} units</p>
+                <p className="mt-1 text-sm text-muted">for {r.production.quantity.toLocaleString()} units</p>
               </div>
               <div className="card">
                 <p className="text-sm text-muted">Cost per unit</p>
                 <p className="mt-1 text-3xl font-bold tabular-nums">{money(r.production.costPerUnit)}</p>
-                <p className="mt-1 text-xs text-muted">what each unit really costs you</p>
+                <p className="mt-1 text-sm text-muted">what each unit really costs you</p>
               </div>
             </div>
 
@@ -283,7 +283,7 @@ export function PricingCalculator({ canSave, initial, savedId }: { canSave: bool
               </div>
             ))}
           </dl>
-          <p className="mt-3 text-xs text-muted">Formulas: price for a target margin = (cost + fee per sale) ÷ (1 − margin% − fee%). Break-even units = total production cost ÷ what you receive per sale after fees, rounded up.</p>
+          <p className="mt-3 text-sm text-muted">Formulas: price for a target margin = (cost + fee per sale) ÷ (1 − margin% − fee%). Break-even units = total production cost ÷ what you receive per sale after fees, rounded up.</p>
         </details>
       </div>
     </div>

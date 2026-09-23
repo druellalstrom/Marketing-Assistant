@@ -13,6 +13,8 @@ export const PROTECTED_PREFIXES = [
   "/design-studio",
   "/assistant",
   "/library",
+  "/settings",
+  "/search",
 ];
 
 export function isProtectedPath(pathname: string): boolean {

@@ -50,7 +50,7 @@ export default function Home() {
         <ol className="mt-4 grid gap-3 text-sm sm:grid-cols-3 lg:grid-cols-7">
           {["Product", "Pricing", "Branding", "Strategy", "Content", "Advertisement", "Campaign"].map((step, i) => (
             <li key={step} className="rounded-lg bg-background p-3">
-              <span className="text-xs text-muted">Step {i + 1}</span>
+              <span className="text-sm text-muted">Step {i + 1}</span>
               <p className="font-medium">{step}</p>
             </li>
           ))}

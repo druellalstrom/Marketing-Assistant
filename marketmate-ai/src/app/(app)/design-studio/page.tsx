@@ -124,7 +124,7 @@ export default async function DesignStudioPage({ searchParams }: PageProps<"/des
             {designs.map((d) => (
               <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
                 <Link href={libraryHref("designs", d.id)} className="font-medium hover:text-brand hover:underline">{d.title}</Link>
-                <span className="text-xs text-muted">{d.design_type} · {STATUS_LABEL[d.status] ?? d.status} · {new Date(d.updated_at).toLocaleDateString()}</span>
+                <span className="text-sm text-muted">{d.design_type} · {STATUS_LABEL[d.status] ?? d.status} · {new Date(d.updated_at).toLocaleDateString()}</span>
               </li>
             ))}
           </ul>

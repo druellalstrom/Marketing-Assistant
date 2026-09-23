@@ -58,12 +58,12 @@ export function FileUpload({ name, label, userId, folder, defaultPath, onChange 
       <input id={`${name}-file`} type="file" accept={TYPES.join(",")} onChange={onFile} disabled={busy} className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-brand/10 file:px-3 file:py-2 file:text-brand" />
       <input type="hidden" name={name} value={path} />
       {path && (
-        <p className="mt-1 flex items-center gap-2 text-xs text-muted">
+        <p className="mt-1 flex items-center gap-2 text-sm text-muted">
           <span className="truncate">Stored privately: {path.split("/").pop()}</span>
           <button type="button" onClick={clear} className="text-red-600 hover:underline">Remove</button>
         </p>
       )}
-      {status && <p className="mt-1 text-xs text-muted" role="status">{status}</p>}
+      {status && <p className="mt-1 text-sm text-muted" role="status">{status}</p>}
     </div>
   );
 }

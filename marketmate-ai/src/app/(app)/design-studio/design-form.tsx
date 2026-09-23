@@ -231,14 +231,14 @@ export function DesignForm({ userId, initial, designId: initialId, aiConfigured 
           </div>
           <div>
             <label className="label" htmlFor="d-copy">Copy</label>
-            <textarea id="d-copy" className="input min-h-40 font-mono text-[13px]" maxLength={5000} value={v.copy} onChange={(e) => set("copy", e.target.value)} placeholder="Generated or your own copy for the design" />
+            <textarea id="d-copy" className="input min-h-40 font-mono text-[0.8125rem]" maxLength={5000} value={v.copy} onChange={(e) => set("copy", e.target.value)} placeholder="Generated or your own copy for the design" />
           </div>
           {v.copy && <ResultActions text={v.copy} filename={`${v.productName} copy`} />}
         </fieldset>
 
         <div className="card space-y-2">
           <button className="btn-primary w-full" disabled={saving}>{saving ? "Saving…" : designId ? "Save changes & generate image" : "Save design & generate image"}</button>
-          <p className="text-xs text-muted">Image generation isn&apos;t connected yet — your design brief and copy will be saved, but no image will be created.</p>
+          <p className="text-sm text-muted">Image generation isn&apos;t connected yet — your design brief and copy will be saved, but no image will be created.</p>
         </div>
       </form>
 
@@ -253,7 +253,7 @@ export function DesignForm({ userId, initial, designId: initialId, aiConfigured 
             <p className="mt-3 inline-block rounded-md px-3 py-1.5 text-sm font-medium text-white" style={{ background: v.colors.accent }}>{v.callToAction || "Shop now"}</p>
             {(v.contact || v.handles) && <p className="mt-3 text-xs" style={{ color: v.colors.primary }}>{[v.contact, v.handles].filter(Boolean).join(" · ")}</p>}
           </div>
-          <p className="mt-2 text-xs text-muted">A simple mock-up of your text and colours to check the brief. It is not AI-generated artwork.</p>
+          <p className="mt-2 text-sm text-muted">A simple mock-up of your text and colours to check the brief. It is not AI-generated artwork.</p>
         </div>
 
         {result?.kind === "not_connected" && (

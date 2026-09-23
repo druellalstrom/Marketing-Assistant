@@ -53,7 +53,7 @@ export async function ToolPage({ toolId, path, children }: { toolId: ToolId; pat
                 <Link href={libraryHref(tool.storage.table, h.id)} className="min-w-0 flex-1 truncate font-medium hover:text-brand hover:underline">
                   {h.title ?? tool.title}
                 </Link>
-                <span className="text-xs text-muted">
+                <span className="text-sm text-muted">
                   {h.platform ? `${h.platform} · ` : ""}
                   {new Date(h.updated_at).toLocaleDateString()}
                 </span>

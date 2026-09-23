@@ -2,117 +2,56 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Brush,
-  Building2,
-  Calculator,
-  CalendarDays,
-  FolderOpen,
-  Hash,
-  LayoutDashboard,
-  Lightbulb,
-  LogOut,
-  Megaphone,
-  MessageSquareText,
-  Palette,
-  PenLine,
-  Repeat2,
-  Sparkles,
-  Swords,
-  Target,
-  UserRound,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { Heart, Sparkles } from "lucide-react";
+import { Logo } from "@/components/shell/logo";
+import { activeNavHref, NAV_ITEMS } from "@/components/shell/nav";
 
-const NAV: { heading?: string; items: [href: string, label: string, Icon: LucideIcon][] }[] = [
-  {
-    items: [
-      ["/dashboard", "Dashboard", LayoutDashboard],
-      ["/assistant", "AI Assistant", Sparkles],
-      ["/library", "Saved work", FolderOpen],
-    ],
-  },
-  { heading: "Business", items: [["/calculator", "Pricing calculator", Calculator]] },
-  {
-    heading: "Social Media Center",
-    items: [
-      ["/social/captions", "Captions", MessageSquareText],
-      ["/social/hashtags", "Hashtags", Hash],
-      ["/social/ideas", "Content ideas", Lightbulb],
-      ["/social/repurpose", "Repurpose", Repeat2],
-      ["/social/calendar", "Content calendar", CalendarDays],
-    ],
-  },
-  {
-    heading: "Marketing Strategy",
-    items: [
-      ["/strategy/audience", "Audience analysis", Users],
-      ["/strategy/personas", "Customer personas", UserRound],
-      ["/strategy/plan", "Marketing plan", Target],
-      ["/strategy/campaigns", "Campaign ideas", Megaphone],
-      ["/strategy/competitors", "Competitor analysis", Swords],
-    ],
-  },
-  {
-    heading: "Create",
-    items: [
-      ["/studio", "Content studio", PenLine],
-      ["/design-studio", "Design Studio", Brush],
-    ],
-  },
-  {
-    heading: "Your brand",
-    items: [
-      ["/business", "Business profile", Building2],
-      ["/brand-kit", "Brand kit", Palette],
-    ],
-  },
-];
-
-export function Sidebar({ email, signOut }: { email: string | null; signOut: () => Promise<void> }) {
-  const pathname = usePathname();
+export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
+  const active = activeNavHref(usePathname());
   return (
-    <nav className="flex h-full flex-col gap-4 overflow-y-auto p-4 text-sm" aria-label="Main">
-      <Link href="/dashboard" className="px-2">
-        <span className="block text-lg font-bold text-brand">MarketMate AI</span>
-        <span className="block text-xs text-muted">Your AI Marketing Department</span>
+    <nav className="flex h-full flex-col gap-6 overflow-y-auto px-3 py-6 3xl:px-4" aria-label="Main">
+      <Link href="/dashboard" className="px-2" onClick={onNavigate}>
+        <Logo />
       </Link>
-      {NAV.map((group, i) => (
-        <div key={i}>
-          {group.heading && (
-            <p className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-muted">{group.heading}</p>
-          )}
-          <ul className="space-y-0.5">
-            {group.items.map(([href, label, Icon]) => {
-              const active = pathname === href || pathname.startsWith(`${href}/`);
-              return (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    aria-current={active ? "page" : undefined}
-                    className={`flex items-center gap-2 rounded-md px-2 py-1.5 ${active ? "bg-brand/10 font-medium text-brand" : "hover:bg-background"}`}
-                  >
-                    <Icon aria-hidden className="h-4 w-4 shrink-0" />
-                    {label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ))}
-      <div className="mt-auto border-t border-border pt-3">
-        {email ? (
-          <form action={signOut}>
-            <p className="truncate px-2 text-xs text-muted" title={email}>{email}</p>
-            <button className="mt-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-background">
-              <LogOut aria-hidden className="h-4 w-4" /> Sign out
-            </button>
-          </form>
-        ) : (
-          <Link href="/login" className="block rounded-md px-2 py-1.5 hover:bg-background">Sign in</Link>
-        )}
+      <ul className="space-y-1">
+        {NAV_ITEMS.map(({ href, label, Icon }) => {
+          const isActive = active === href;
+          return (
+            <li key={href}>
+              <Link
+                href={href}
+                onClick={onNavigate}
+                aria-current={isActive ? "page" : undefined}
+                className={`flex min-h-12 items-center gap-3.5 rounded-xl px-4 text-base font-medium transition ${
+                  isActive
+                    ? "bg-pink text-white shadow-[0_6px_20px_-6px_rgba(236,72,153,0.7)]"
+                    : "text-slate-200 hover:bg-white/8 hover:text-white"
+                }`}
+              >
+                <Icon aria-hidden className="h-5 w-5 shrink-0" strokeWidth={2} />
+                {label}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+
+      <div className="relative mt-auto overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4">
+        <svg aria-hidden viewBox="0 0 200 60" className="pointer-events-none absolute -right-6 -top-2 h-16 w-40 opacity-40">
+          <path d="M0 50 C 50 10, 90 60, 140 20 S 190 10, 200 5" fill="none" stroke="#EC4899" strokeWidth="3" strokeLinecap="round" />
+        </svg>
+        <p className="relative text-[0.9375rem] font-medium italic leading-snug text-slate-100">
+          Big dreams need a plan and the right tools.
+          <Heart aria-hidden className="ml-1 inline h-4 w-4 fill-pink text-pink" />
+        </p>
+        <Link
+          href="/assistant"
+          onClick={onNavigate}
+          className="relative mt-3 flex min-h-11 items-center gap-2 rounded-xl bg-brand px-3 text-[0.9375rem] font-semibold text-white hover:bg-brand-strong"
+        >
+          <Sparkles aria-hidden className="h-4 w-4 text-gold" />
+          MarketMate AI is here to help!
+        </Link>
       </div>
     </nav>
   );

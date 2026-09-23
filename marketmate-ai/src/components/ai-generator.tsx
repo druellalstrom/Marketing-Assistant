@@ -188,9 +188,9 @@ export function AiGenerator({ toolId, fields, aiConfigured, prefill, disclaimer,
                 )}
               </>
             )}
-            {f.help && <p className="mt-1 text-xs text-muted">{f.help}</p>}
+            {f.help && <p className="mt-1 text-sm text-muted">{f.help}</p>}
             {f.prefill && prefill[f.prefill] && values[f.name] === prefill[f.prefill] && (
-              <p className="mt-1 text-xs text-muted">From your business profile</p>
+              <p className="mt-1 text-sm text-muted">From your business profile</p>
             )}
           </div>
         ))}
@@ -224,7 +224,7 @@ export function AiGenerator({ toolId, fields, aiConfigured, prefill, disclaimer,
             </div>
             <div>
               <label className="label" htmlFor="result-body">Content</label>
-              <textarea id="result-body" className="input min-h-96 font-mono text-[13px] leading-relaxed" value={draft} onChange={(e) => setDraft(e.target.value)} />
+              <textarea id="result-body" className="input min-h-96 font-mono text-[0.8125rem] leading-relaxed" value={draft} onChange={(e) => setDraft(e.target.value)} />
             </div>
             <ResultActions
               text={draft}

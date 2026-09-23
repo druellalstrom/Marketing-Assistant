@@ -67,7 +67,7 @@ export function ItemEditor({ table, id, title: initialTitle, body: initialBody, 
       )}
       <div>
         <label className="label" htmlFor="item-body">Content</label>
-        <textarea id="item-body" className="input min-h-[28rem] font-mono text-[13px] leading-relaxed" value={body} onChange={(e) => setBody(e.target.value)} />
+        <textarea id="item-body" className="input min-h-[28rem] font-mono text-[0.8125rem] leading-relaxed" value={body} onChange={(e) => setBody(e.target.value)} />
       </div>
       <ResultActions
         text={body}
