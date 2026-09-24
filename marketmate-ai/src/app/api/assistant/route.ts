@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getAuthContext } from "@/lib/supabase/server";
-import { AiGenerationError, AiNotConfiguredError, isAnthropicConfigured } from "@/lib/ai/anthropic";
+import { AiGenerationError, AiNotConfiguredError } from "@/lib/ai/errors";
+import { isAiConfigured } from "@/lib/ai/provider";
 import { executePricingTool, runAssistantTurn, type ToolHandler } from "@/lib/ai/assistant";
 import { businessSchema } from "@/lib/business/schema";
 import { getBusinessContext, getPrimaryBusiness } from "@/lib/data/business";
@@ -59,8 +60,8 @@ export async function GET() {
 export async function POST(request: Request) {
   const auth = await getAuthContext();
   if (!auth) return NextResponse.json({ error: "Please sign in to use the assistant." }, { status: 401 });
-  if (!isAnthropicConfigured()) {
-    return NextResponse.json({ error: "AI is not connected: ANTHROPIC_API_KEY is not set on the server." }, { status: 503 });
+  if (!isAiConfigured()) {
+    return NextResponse.json({ error: "AI is not connected: set GEMINI_API_KEY on the server." }, { status: 503 });
   }
 
   let raw: unknown;

@@ -147,7 +147,7 @@ export function AiGenerator({ toolId, fields, aiConfigured, prefill, disclaimer,
       >
         {!aiConfigured && (
           <p className="rounded-lg bg-amber-100 p-3 text-sm text-amber-900">
-            AI is not connected: set <code>ANTHROPIC_API_KEY</code> on the server to enable generation.
+            AI is not connected: set <code>GEMINI_API_KEY</code> on the server to enable generation.
           </p>
         )}
         {fields.map((f) => (

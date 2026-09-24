@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { z } from "zod";
 import { PageHeader } from "@/components/page-header";
-import { isAnthropicConfigured } from "@/lib/ai/anthropic";
+import { isAiConfigured } from "@/lib/ai/provider";
 import { getBrandKit, getPrimaryBusiness } from "@/lib/data/business";
 import { DESIGN_STYLES, DESIGN_TYPES } from "@/lib/design/brief";
 import { getImageProvider } from "@/lib/design/provider";
@@ -112,7 +112,7 @@ export default async function DesignStudioPage({ searchParams }: PageProps<"/des
           Editing a saved design. <Link href="/design-studio" className="text-brand hover:underline">Start a new one</Link>
         </p>
       )}
-      <DesignForm key={loadedId ?? "new"} userId={user.id} initial={initial} designId={loadedId} aiConfigured={isAnthropicConfigured()} />
+      <DesignForm key={loadedId ?? "new"} userId={user.id} initial={initial} designId={loadedId} aiConfigured={isAiConfigured()} />
 
       <section className="mt-10">
         <div className="mb-3 flex items-center justify-between">

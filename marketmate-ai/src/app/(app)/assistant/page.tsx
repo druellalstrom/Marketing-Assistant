@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/page-header";
-import { isAnthropicConfigured } from "@/lib/ai/anthropic";
+import { isAiConfigured } from "@/lib/ai/provider";
 import { getPrimaryBusiness } from "@/lib/data/business";
 import { requireAuth } from "@/lib/supabase/server";
 import { AssistantChat } from "./chat";
@@ -22,7 +22,7 @@ export default async function AssistantPage() {
       />
       <AssistantChat
         initial={(data ?? []) as { id: string; role: "user" | "assistant"; content: string }[]}
-        aiConfigured={isAnthropicConfigured()}
+        aiConfigured={isAiConfigured()}
         businessName={business?.name ?? null}
       />
     </>

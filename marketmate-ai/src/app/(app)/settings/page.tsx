@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { CheckCircle2, Database, ImageIcon, LogOut, PenLine } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
-import { isAnthropicConfigured } from "@/lib/ai/anthropic";
+import { aiProviderLabel, isAiConfigured } from "@/lib/ai/provider";
 import { getImageProvider } from "@/lib/design/provider";
 import { requireAuth } from "@/lib/supabase/server";
 import { signOut } from "../../(auth)/actions";
@@ -12,7 +12,8 @@ export const metadata: Metadata = { title: "Settings" };
 export default async function SettingsPage() {
   const { supabase, user } = await requireAuth("/settings");
   const { data: profile } = await supabase.from("users").select("full_name").eq("id", user.id).maybeSingle();
-  const aiReady = isAnthropicConfigured();
+  const aiReady = isAiConfigured();
+  const aiLabel = aiProviderLabel();
   const imagesReady = getImageProvider().connected;
 
   const status = (ok: boolean) =>
@@ -54,13 +55,13 @@ export default async function SettingsPage() {
             <li className="rounded-2xl border border-border p-4">
               <div className="flex flex-wrap items-center gap-3">
                 <PenLine aria-hidden className="h-6 w-6 text-brand" />
-                <span className="flex-1 text-base font-semibold">AI writing (Anthropic)</span>
+                <span className="flex-1 text-base font-semibold">AI writing{aiReady ? ` (${aiLabel})` : ""}</span>
                 {status(aiReady)}
               </div>
               {!aiReady && (
                 <ol className="mt-3 list-decimal space-y-1 pl-6 text-[0.9375rem] text-slate-700">
-                  <li>Create an API key at <a className="font-semibold text-brand-strong underline" href="https://console.anthropic.com/" target="_blank" rel="noreferrer">console.anthropic.com</a>.</li>
-                  <li>Add <code className="rounded bg-slate-100 px-1.5">ANTHROPIC_API_KEY=your-key</code> to <code className="rounded bg-slate-100 px-1.5">.env.local</code> (or your hosting provider&apos;s environment settings).</li>
+                  <li>Create a free Gemini API key at <a className="font-semibold text-brand-strong underline" href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">aistudio.google.com/apikey</a>.</li>
+                  <li>Add <code className="rounded bg-slate-100 px-1.5">GEMINI_API_KEY=your-key</code> to <code className="rounded bg-slate-100 px-1.5">.env.local</code> (or your hosting provider&apos;s environment settings).</li>
                   <li>Restart the app. This page will then show &quot;Connected&quot;.</li>
                 </ol>
               )}

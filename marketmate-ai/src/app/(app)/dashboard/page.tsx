@@ -23,7 +23,7 @@ import {
 import { HeroIllustration } from "@/components/dashboard/hero-illustration";
 import { ProjectMenu } from "@/components/dashboard/project-menu";
 import { WeeklyChart } from "@/components/dashboard/weekly-chart";
-import { isAnthropicConfigured } from "@/lib/ai/anthropic";
+import { aiProviderLabel, isAiConfigured } from "@/lib/ai/provider";
 import { displayNameFor, firstNameOf } from "@/lib/dashboard/account";
 import { getDashboardData, type RecentProject } from "@/lib/data/dashboard";
 import { getImageProvider } from "@/lib/design/provider";
@@ -81,7 +81,8 @@ export default async function DashboardPage() {
     supabase.from("users").select("full_name").eq("id", user.id).maybeSingle(),
   ]);
   const firstName = firstNameOf(displayNameFor(profile.data?.full_name, user.email));
-  const aiReady = isAnthropicConfigured();
+  const aiReady = isAiConfigured();
+  const aiLabel = aiProviderLabel();
   const imagesReady = getImageProvider().connected;
   const weeklyTotal = data.weekly.reduce((s, w) => s + w.count, 0);
   const pct = Math.round((data.progress.completed / data.progress.tasks.length) * 100);
@@ -257,7 +258,7 @@ export default async function DashboardPage() {
             <ul className="mt-4 space-y-3">
               {[
                 { label: "Database & accounts", Icon: Database, ok: true, iconCls: "bg-green-100 text-green-800" },
-                { label: "AI writing", Icon: PenLine, ok: aiReady, iconCls: "bg-pink-100 text-brand-strong" },
+                { label: aiReady ? `AI writing (${aiLabel})` : "AI writing", Icon: PenLine, ok: aiReady, iconCls: "bg-pink-100 text-brand-strong" },
                 { label: "Image generation", Icon: ImageIcon, ok: imagesReady, iconCls: "bg-violet-100 text-purple" },
               ].map(({ label, Icon, ok, iconCls }) => (
                 <li key={label} className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-3">

@@ -212,7 +212,7 @@ export function DesignForm({ userId, initial, designId: initialId, aiConfigured 
           <button type="button" className="btn-secondary w-full" disabled={copyState.kind === "loading" || !aiConfigured} onClick={() => void generateCopy()}>
             {copyState.kind === "loading" ? "Writing copy…" : v.copy ? "Regenerate copy" : "Generate marketing copy"}
           </button>
-          {!aiConfigured && <p className="text-xs text-amber-800">AI copy needs ANTHROPIC_API_KEY on the server.</p>}
+          {!aiConfigured && <p className="text-xs text-amber-800">AI copy needs GEMINI_API_KEY on the server.</p>}
           {copyState.kind === "error" && (
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800" role="alert">
               <span>{copyState.message}</span>

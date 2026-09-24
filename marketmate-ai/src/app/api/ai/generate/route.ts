@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/supabase/server";
-import {
-  AiGenerationError,
-  AiNotConfiguredError,
-  generateMarketingText,
-  isAnthropicConfigured,
-} from "@/lib/ai/anthropic";
+import { AiGenerationError, AiNotConfiguredError } from "@/lib/ai/errors";
+import { generateMarketingText, isAiConfigured } from "@/lib/ai/provider";
 import { buildUserPrompt, titleFor } from "@/lib/ai/prompts";
 import { getTool } from "@/lib/ai/tool-definitions";
 import { validateGenerateRequest } from "@/lib/ai/validation";
@@ -20,9 +16,9 @@ export async function POST(request: Request) {
   if (!auth) {
     return NextResponse.json({ error: "Please sign in to use AI tools." }, { status: 401 });
   }
-  if (!isAnthropicConfigured()) {
+  if (!isAiConfigured()) {
     return NextResponse.json(
-      { error: "AI is not connected: ANTHROPIC_API_KEY is not set on the server." },
+      { error: "AI is not connected: set GEMINI_API_KEY on the server." },
       { status: 503 },
     );
   }

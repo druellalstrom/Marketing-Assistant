@@ -2,6 +2,7 @@ import "server-only";
 
 import Anthropic from "@anthropic-ai/sdk";
 import { SYSTEM_PROMPT } from "./prompts";
+import { AiGenerationError, AiNotConfiguredError, TRUNCATED_NOTE, type GenerationResult } from "./errors";
 
 /**
  * Server-only Anthropic client. `server-only` makes the build fail if this
@@ -24,27 +25,7 @@ function getClient(): Anthropic {
   return client;
 }
 
-export class AiNotConfiguredError extends Error {
-  constructor() {
-    super("ANTHROPIC_API_KEY is not set on the server.");
-    this.name = "AiNotConfiguredError";
-  }
-}
-
-export class AiGenerationError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-  ) {
-    super(message);
-    this.name = "AiGenerationError";
-  }
-}
-
-export interface GenerationResult {
-  text: string;
-  model: string;
-}
+export { AiGenerationError, AiNotConfiguredError, type GenerationResult } from "./errors";
 
 type CreateParams = Omit<Anthropic.Beta.Messages.MessageCreateParamsNonStreaming, "model" | "betas" | "fallbacks">;
 
@@ -106,7 +87,7 @@ export async function generateMarketingText(userPrompt: string): Promise<Generat
 
   const truncated = response.stop_reason === "max_tokens";
   return {
-    text: truncated ? `${text}\n\n_(Output was cut off because it reached the length limit.)_` : text,
+    text: truncated ? `${text}${TRUNCATED_NOTE}` : text,
     model: response.model,
   };
 }

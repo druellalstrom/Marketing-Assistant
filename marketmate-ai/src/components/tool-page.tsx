@@ -3,7 +3,7 @@ import { AiGenerator } from "@/components/ai-generator";
 import { PageHeader } from "@/components/page-header";
 import { ConfirmButton } from "@/components/confirm-button";
 import { deleteHistoryItem } from "@/components/history-actions";
-import { isAnthropicConfigured } from "@/lib/ai/anthropic";
+import { isAiConfigured } from "@/lib/ai/provider";
 import { getTool, type ToolId } from "@/lib/ai/tool-definitions";
 import { getBusinessContext, prefillFrom } from "@/lib/data/business";
 import { getToolHistory } from "@/lib/data/history";
@@ -33,7 +33,7 @@ export async function ToolPage({ toolId, path, children }: { toolId: ToolId; pat
         key={toolId}
         toolId={tool.id}
         fields={tool.fields}
-        aiConfigured={isAnthropicConfigured()}
+        aiConfigured={isAiConfigured()}
         prefill={prefillFrom(business, brandKit)}
         disclaimer={tool.disclaimer}
         path={path}

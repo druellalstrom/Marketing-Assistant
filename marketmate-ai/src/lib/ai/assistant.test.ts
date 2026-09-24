@@ -20,11 +20,13 @@ beforeAll(async () => {
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
   process.env.ANTHROPIC_BASE_URL = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   process.env.ANTHROPIC_API_KEY = "sk-ant-test-not-real";
+  process.env.AI_PROVIDER = "anthropic";
 });
 afterAll(() => {
   server.close();
   delete process.env.ANTHROPIC_BASE_URL;
   delete process.env.ANTHROPIC_API_KEY;
+  delete process.env.AI_PROVIDER;
 });
 beforeEach(() => {
   requests = [];

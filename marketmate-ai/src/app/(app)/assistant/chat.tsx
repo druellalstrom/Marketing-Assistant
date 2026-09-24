@@ -126,7 +126,7 @@ export function AssistantChat({ initial, aiConfigured, businessName }: { initial
           </div>
         )}
         {note && <p className="text-sm text-green-700" role="status">{note}</p>}
-        {!aiConfigured && <p className="text-sm text-amber-800">AI is not connected: set <code>ANTHROPIC_API_KEY</code> on the server.</p>}
+        {!aiConfigured && <p className="text-sm text-amber-800">AI is not connected: set <code>GEMINI_API_KEY</code> on the server.</p>}
         <form
           className="flex gap-2"
           onSubmit={(e) => {
