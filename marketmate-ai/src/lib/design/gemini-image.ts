@@ -2,7 +2,7 @@ import "server-only";
 
 import { FinishReason, type GenerateContentResponse, type Part } from "@google/genai";
 import { AiGenerationError } from "@/lib/ai/errors";
-import { getGeminiClient, mapGeminiError } from "@/lib/ai/gemini";
+import { generateWithFallback, modelChain } from "@/lib/ai/gemini";
 import { DESIGN_DIMENSIONS, type DesignBrief } from "./brief";
 import type { ImageGenerationResult, ImageProvider, ReferenceImage } from "./provider";
 
@@ -12,6 +12,8 @@ import type { ImageGenerationResult, ImageProvider, ReferenceImage } from "./pro
  * overrides the model.
  */
 export const GEMINI_IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
+/** Backups when the image model is overloaded or out of quota (comma-separated GEMINI_IMAGE_FALLBACK_MODELS). */
+export const GEMINI_IMAGE_MODELS = modelChain(GEMINI_IMAGE_MODEL, process.env.GEMINI_IMAGE_FALLBACK_MODELS, []);
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // matches the storage bucket limit
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
@@ -47,21 +49,20 @@ export class GeminiImageProvider implements ImageProvider {
 
     let response: GenerateContentResponse;
     try {
-      response = await getGeminiClient().models.generateContent({
-        model: GEMINI_IMAGE_MODEL,
-        contents: [{ role: "user", parts }],
-        config: {
-          responseModalities: ["TEXT", "IMAGE"],
-          imageConfig: { aspectRatio: DESIGN_DIMENSIONS[brief.designType].aspectRatio },
+      ({ response } = await generateWithFallback(
+        GEMINI_IMAGE_MODELS,
+        {
+          contents: [{ role: "user", parts }],
+          config: {
+            responseModalities: ["TEXT", "IMAGE"],
+            imageConfig: { aspectRatio: DESIGN_DIMENSIONS[brief.designType].aspectRatio },
+          },
         },
-      });
+        "GEMINI_IMAGE_MODEL",
+      ));
     } catch (err) {
-      try {
-        mapGeminiError(err, GEMINI_IMAGE_MODEL, "GEMINI_IMAGE_MODEL");
-      } catch (mapped) {
-        if (mapped instanceof AiGenerationError) return fail(mapped.message);
-        return fail("Image generation failed. Please try again.");
-      }
+      if (err instanceof AiGenerationError) return fail(err.message);
+      return fail("Image generation failed. Please try again.");
     }
 
     const candidate = response.candidates?.[0];

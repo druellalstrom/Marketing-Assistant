@@ -5,7 +5,7 @@ import type { Content, FunctionDeclaration } from "@google/genai";
 import { z } from "zod";
 import { callClaude, textOf } from "./anthropic";
 import { AiGenerationError } from "./errors";
-import { callGemini } from "./gemini";
+import { callGemini, GEMINI_MODELS } from "./gemini";
 import { activeProvider } from "./provider";
 import { formatBusiness, type BusinessContext } from "./prompts";
 import { COST_CATEGORIES, PricingInputError, roundMoney, roundPercent, runPricingCalculator } from "@/lib/pricing/calculator";
@@ -164,8 +164,12 @@ async function runGeminiTurn(opts: TurnOptions): Promise<AssistantTurn> {
   const system = systemFor(opts.business);
   const toolsUsed: string[] = [];
 
+  // Fall back between models only on the first call; then stay on the model that
+  // answered, since its turns can carry model-specific thought signatures.
+  let models = GEMINI_MODELS;
   for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
-    const response = await callGemini({ system, contents, functionDeclarations: GEMINI_FUNCTIONS });
+    const { response, model } = await callGemini({ system, contents, functionDeclarations: GEMINI_FUNCTIONS }, models);
+    models = [model];
     const calls = response.functionCalls ?? [];
     if (calls.length === 0) {
       const text = (response.text ?? "").trim();

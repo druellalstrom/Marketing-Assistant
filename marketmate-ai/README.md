@@ -22,6 +22,7 @@ Next.js 16 (App Router) · TypeScript · Tailwind CSS v4 · Supabase (Postgres +
    | `NEXT_PUBLIC_SITE_URL` | auth email links | No |
    | `GEMINI_API_KEY` | server-only API routes (get one at https://aistudio.google.com/apikey) | **Yes** — never prefix with `NEXT_PUBLIC_` |
    | `GEMINI_MODEL` (optional) | defaults to `gemini-flash-latest` | No |
+   | `GEMINI_FALLBACK_MODELS` (optional) | backups tried when a model is overloaded or out of free quota; defaults to `gemini-flash-lite-latest,gemini-2.5-flash,gemini-2.5-flash-lite` | No |
    | `ANTHROPIC_API_KEY` / `ANTHROPIC_MODEL` (optional) | used only if `GEMINI_API_KEY` is empty or `AI_PROVIDER=anthropic` | **Yes** (key) |
    | `AI_PROVIDER` (optional) | `gemini` or `anthropic` to force one; default picks Gemini when its key is set | No |
    | `IMAGE_PROVIDER` | Design Studio: `none` (default), `gemini` (uses `GEMINI_API_KEY`) or `pollinations` | No |

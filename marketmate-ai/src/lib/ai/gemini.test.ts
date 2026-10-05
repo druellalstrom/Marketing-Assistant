@@ -86,15 +86,48 @@ describe("generateWithGemini", () => {
     await expect(generateWithGemini("x")).rejects.toMatchObject({ status: 502, message: expect.stringMatching(/empty/) });
   });
 
-  it("explains the free-tier rate limit without spending quota on retries", async () => {
+  it("tries each backup model once on a rate limit (no retries) and then explains it", async () => {
     script = [apiError(429, "Resource has been exhausted")];
-    const { generateWithGemini } = await import("./gemini");
+    const { generateWithGemini, GEMINI_MODELS } = await import("./gemini");
     await expect(generateWithGemini("x")).rejects.toMatchObject({
       status: 429,
       message: expect.stringMatching(/free usage limit.*wait a minute/),
     });
-    expect(requests.length).toBe(1);
+    expect(GEMINI_MODELS).toEqual(["gemini-flash-latest", "gemini-flash-lite-latest", "gemini-2.5-flash", "gemini-2.5-flash-lite"]);
+    expect(requests.map((r) => r.url.match(/models\/([^:]+)/)?.[1])).toEqual(GEMINI_MODELS);
   }, 20_000);
+
+  it("falls back to the next model when one is overloaded", async () => {
+    script = [apiError(503, "The model is overloaded."), apiError(503, "The model is overloaded."), ok([{ text: "From the backup" }])];
+    const { generateWithGemini } = await import("./gemini");
+    expect((await generateWithGemini("x")).text).toBe("From the backup");
+    // One quick retry on the first model, then the first backup.
+    expect(requests.map((r) => r.url.match(/models\/([^:]+)/)?.[1])).toEqual(["gemini-flash-latest", "gemini-flash-latest", "gemini-flash-lite-latest"]);
+  }, 20_000);
+
+  it("says Google is overloaded when every model is busy", async () => {
+    script = [apiError(503, "The model is overloaded.")];
+    const { generateWithGemini } = await import("./gemini");
+    await expect(generateWithGemini("x")).rejects.toMatchObject({ status: 503, message: expect.stringMatching(/overloaded.*backup models/) });
+    expect(requests).toHaveLength(8); // 4 models x (1 try + 1 retry)
+  }, 60_000);
+
+  it("honours GEMINI_FALLBACK_MODELS", async () => {
+    process.env.GEMINI_FALLBACK_MODELS = "my-backup, gemini-flash-latest ,";
+    try {
+      const { GEMINI_MODELS } = await import("./gemini");
+      expect(GEMINI_MODELS).toEqual(["gemini-flash-latest", "my-backup"]);
+    } finally {
+      delete process.env.GEMINI_FALLBACK_MODELS;
+    }
+  });
+
+  it("doesn't switch models for errors another model can't fix", async () => {
+    script = [apiError(400, "Invalid argument")];
+    const { generateWithGemini } = await import("./gemini");
+    await expect(generateWithGemini("x")).rejects.toMatchObject({ status: 502 });
+    expect(requests).toHaveLength(1);
+  });
 
   it("maps a rejected key without leaking it", async () => {
     script = [apiError(400, "API key not valid. Please pass a valid API key.")];
@@ -211,6 +244,21 @@ describe("runAssistantTurn on Gemini", () => {
       .contents.at(-1)!.parts[0].functionResponse;
     expect(fr.response.error).toMatch(/Invalid pricing input/);
   });
+
+  it("falls back on the first call, then stays on the model that answered", async () => {
+    script = [
+      apiError(503, "overloaded"),
+      apiError(503, "overloaded"),
+      ok([{ functionCall: { id: "fc_1", name: "calculate_pricing", args: pricingInput } }]),
+      ok([{ text: "Done." }]),
+    ];
+    const { runAssistantTurn, executePricingTool } = await import("./assistant");
+    const turn = await runAssistantTurn({ history: [], userMessage: "price?", business: null, executeTool: async (_n, i) => executePricingTool(i) });
+    expect(turn.text).toBe("Done.");
+    expect(requests.map((r) => r.url.match(/models\/([^:]+)/)?.[1])).toEqual([
+      "gemini-flash-latest", "gemini-flash-latest", "gemini-flash-lite-latest", "gemini-flash-lite-latest",
+    ]);
+  }, 20_000);
 
   it("stops runaway tool loops", async () => {
     script = [ok([{ functionCall: { name: "calculate_pricing", args: pricingInput } }])];
