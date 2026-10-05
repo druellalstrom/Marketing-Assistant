@@ -24,7 +24,9 @@ Next.js 16 (App Router) · TypeScript · Tailwind CSS v4 · Supabase (Postgres +
    | `GEMINI_MODEL` (optional) | defaults to `gemini-flash-latest` | No |
    | `ANTHROPIC_API_KEY` / `ANTHROPIC_MODEL` (optional) | used only if `GEMINI_API_KEY` is empty or `AI_PROVIDER=anthropic` | **Yes** (key) |
    | `AI_PROVIDER` (optional) | `gemini` or `anthropic` to force one; default picks Gemini when its key is set | No |
-   | `IMAGE_PROVIDER` | Design Studio; only `none` exists today | No |
+   | `IMAGE_PROVIDER` | Design Studio: `none` (default) or `pollinations` | No |
+   | `POLLINATIONS_API_KEY` | server-only; secret `sk_` key from https://enter.pollinations.ai | **Yes** |
+   | `POLLINATIONS_MODEL` (optional) | defaults to Pollinations' cheapest model | No |
 
    Gemini's free tier is rate-limited (the app shows a "wait a minute and try again" message), and
    Google may use free-tier prompts and responses to improve its products — use a paid tier for
@@ -52,7 +54,7 @@ Next.js 16 (App Router) · TypeScript · Tailwind CSS v4 · Supabase (Postgres +
 | Social Media Center | `/social/*` | Captions, hashtags, content ideas, repurposing, content calendar |
 | Marketing Strategy | `/strategy/*` | Audience analysis, personas, marketing plan, campaigns, competitor analysis (user-provided info only) |
 | Content Creation Studio | `/studio` | 11 content types × tone × length × objective |
-| Design Studio | `/design-studio` | Full brief + uploads + AI copy. **Image generation not connected** |
+| Design Studio | `/design-studio` | Full brief + uploads + AI copy; images via Pollinations.ai when configured |
 | Business profile / Brand kit | `/business`, `/brand-kit` | Used automatically by every AI feature |
 
 ## How it's put together
@@ -71,9 +73,11 @@ Next.js 16 (App Router) · TypeScript · Tailwind CSS v4 · Supabase (Postgres +
   and the assistant's tool loop (function calling on either provider).
   Browsers call `POST /api/ai/generate` and `/api/assistant`; the routes check the session, validate
   input, add the business profile + brand kit to the prompt, call the AI provider, and save results under RLS.
-- `src/lib/design/` — Design Studio brief schema, image-prompt builder, and the provider
-  interface. **Only `NotConnectedProvider` exists**: it never returns an image and the UI says so.
-  To connect Pollinations.ai or a paid API, implement `ImageProvider` and register it in
-  `getImageProvider()`.
+- `src/lib/design/` — Design Studio brief schema, image-prompt builder, and image providers:
+  `PollinationsProvider` (when `IMAGE_PROVIDER=pollinations` and `POLLINATIONS_API_KEY` are set) and
+  `NotConnectedProvider` (default; never returns an image and the UI says so). Generated images are
+  saved to the user's private `design-uploads/<user_id>/generated/` folder and shown with short-lived
+  signed links. Uploaded logos/photos are not sent to Pollinations. To add a paid API, implement
+  `ImageProvider` and register it in `getImageProvider()`.
 - `src/proxy.ts` — Next 16's replacement for middleware: refreshes the Supabase session and
   redirects signed-out users away from protected pages.

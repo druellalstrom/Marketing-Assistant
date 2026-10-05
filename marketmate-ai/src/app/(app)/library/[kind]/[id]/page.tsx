@@ -5,6 +5,7 @@ import { z } from "zod";
 import { PageHeader } from "@/components/page-header";
 import { ConfirmButton } from "@/components/confirm-button";
 import { isLibraryKind, LIBRARY_KINDS, SOCIAL_CONTENT_TYPES } from "@/lib/library";
+import { designImageUrls } from "@/lib/data/designs";
 import { requireAuth } from "@/lib/supabase/server";
 import { deleteItem, duplicateItem } from "../../actions";
 import { RenameButton } from "../../rename-button";
@@ -36,6 +37,7 @@ export default async function LibraryItemPage({ params }: PageProps<"/library/[k
   if (kind === "designs") {
     const brief = (row.brief ?? {}) as Record<string, unknown>;
     const colors = (brief.colors ?? {}) as Record<string, string>;
+    const image = typeof row.output_path === "string" ? await designImageUrls(supabase, row.output_path, String(row.title)) : null;
     const details: [string, unknown][] = [
       ["Format", brief.designType],
       ["Style", brief.style],
@@ -65,6 +67,19 @@ export default async function LibraryItemPage({ params }: PageProps<"/library/[k
           <p className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
             No image was generated: image generation is not connected yet. The brief, copy and uploads are saved.
           </p>
+        )}
+        {row.status === "failed" && (
+          <p className="mb-4 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800" role="alert">
+            The latest image attempt failed{row.error ? `: ${String(row.error)}` : "."}{image ? " The previous image is shown below." : ""}
+          </p>
+        )}
+        {image && (
+          <section className="card mb-6 space-y-3">
+            <h2 className="font-semibold">Generated image</h2>
+            {/* eslint-disable-next-line @next/next/no-img-element -- short-lived signed URL from private storage */}
+            <img src={image.imageUrl} alt={`AI-generated ${String(brief.designType ?? "design").toLowerCase()}`} className="max-h-[70vh] w-auto max-w-full rounded-lg border border-border" />
+            <a href={image.downloadUrl} className="btn-secondary inline-flex">Download image</a>
+          </section>
         )}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <section className="card">

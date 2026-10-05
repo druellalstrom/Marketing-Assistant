@@ -60,11 +60,26 @@ export const designBriefSchema = z
 
 export type DesignBrief = z.infer<typeof designBriefSchema>;
 
+/** Output size in pixels for each format (multiples of 16, under 1.6 megapixels). */
+export const DESIGN_DIMENSIONS: Record<(typeof DESIGN_TYPES)[number], { width: number; height: number }> = {
+  "Promotional poster": { width: 896, height: 1280 },
+  "Social media graphic": { width: 1024, height: 1024 },
+  Flyer: { width: 896, height: 1280 },
+  "Product advertisement": { width: 1024, height: 1024 },
+  "Business card": { width: 1344, height: 768 },
+  "Instagram post (1:1)": { width: 1024, height: 1024 },
+  "Instagram / TikTok story (9:16)": { width: 720, height: 1280 },
+  "Facebook post": { width: 1216, height: 640 },
+  "Promotional banner": { width: 1536, height: 512 },
+};
+
 /**
  * Turns a brief into the text prompt an image model would receive. Pure and
  * provider-agnostic so it can be reviewed now and reused when a provider is connected.
  */
-export function buildImagePrompt(brief: DesignBrief): string {
+export function buildImagePrompt(brief: DesignBrief, opts: { includeUploads?: boolean } = {}): string {
+  // Providers that can't see the private uploads shouldn't be told to use them.
+  const uploads = opts.includeUploads === false ? {} : brief.uploads;
   const parts = [
     `${brief.designType} marketing graphic for "${brief.businessName}".`,
     `Feature the product: ${brief.productName}.`,
@@ -79,9 +94,9 @@ export function buildImagePrompt(brief: DesignBrief): string {
     `Style: ${brief.style}.`,
     `Brand colours: primary ${brief.colors.primary}, secondary ${brief.colors.secondary}, accent ${brief.colors.accent}.`,
     brief.details ? `Additional direction: ${brief.details}` : null,
-    brief.uploads.logo ? "Incorporate the supplied logo." : null,
-    brief.uploads.productPhoto ? "Use the supplied product photo as the hero image." : null,
-    brief.uploads.reference ? "Match the look of the supplied reference image." : null,
+    uploads.logo ? "Incorporate the supplied logo." : null,
+    uploads.productPhoto ? "Use the supplied product photo as the hero image." : null,
+    uploads.reference ? "Match the look of the supplied reference image." : null,
     "Professional, print-quality layout with legible text and balanced spacing.",
   ];
   return parts.filter(Boolean).join(" ");

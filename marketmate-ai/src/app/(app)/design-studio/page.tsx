@@ -4,6 +4,7 @@ import { z } from "zod";
 import { PageHeader } from "@/components/page-header";
 import { isAiConfigured } from "@/lib/ai/provider";
 import { getBrandKit, getPrimaryBusiness } from "@/lib/data/business";
+import { designImageUrls } from "@/lib/data/designs";
 import { DESIGN_STYLES, DESIGN_TYPES } from "@/lib/design/brief";
 import { getImageProvider } from "@/lib/design/provider";
 import { libraryHref } from "@/lib/library";
@@ -58,9 +59,11 @@ export default async function DesignStudioPage({ searchParams }: PageProps<"/des
   };
 
   let loadedId: string | null = null;
+  let initialImage: { imageUrl: string; downloadUrl: string } | null = null;
   if (typeof load === "string" && z.uuid().safeParse(load).success) {
-    const { data } = await supabase.from("designs").select("id, title, brief").eq("id", load).maybeSingle();
+    const { data } = await supabase.from("designs").select("id, title, brief, output_path").eq("id", load).maybeSingle();
     if (data) {
+      if (data.output_path) initialImage = await designImageUrls(supabase, data.output_path, data.title);
       const b = (data.brief ?? {}) as Record<string, unknown>;
       const colors = (b.colors ?? {}) as Record<string, string>;
       const uploads = (b.uploads ?? {}) as Record<string, string>;
@@ -107,12 +110,18 @@ export default async function DesignStudioPage({ searchParams }: PageProps<"/des
           image is created until an image provider (e.g. Pollinations.ai or a paid API) is connected.
         </div>
       )}
+      {connected && (
+        <p className="mb-6 rounded-lg border border-border bg-white p-3 text-sm text-slate-700">
+          <strong>Image generation: connected (Pollinations.ai).</strong> Your brief, without your uploads, is sent to
+          Pollinations to create the image. Generated images are saved privately to your account.
+        </p>
+      )}
       {loadedId && (
         <p className="mb-4 text-sm text-muted">
           Editing a saved design. <Link href="/design-studio" className="text-brand hover:underline">Start a new one</Link>
         </p>
       )}
-      <DesignForm key={loadedId ?? "new"} userId={user.id} initial={initial} designId={loadedId} aiConfigured={isAiConfigured()} />
+      <DesignForm key={loadedId ?? "new"} userId={user.id} initial={initial} designId={loadedId} aiConfigured={isAiConfigured()} imagesConnected={connected} initialImage={initialImage} />
 
       <section className="mt-10">
         <div className="mb-3 flex items-center justify-between">

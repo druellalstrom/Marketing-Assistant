@@ -31,11 +31,14 @@ interface Props {
   initial: DesignFormValues;
   designId: string | null;
   aiConfigured: boolean;
+  imagesConnected: boolean;
+  /** The saved design's current image, if it has one. */
+  initialImage?: { imageUrl: string; downloadUrl: string } | null;
 }
 
 type ImageResult =
   | { kind: "not_connected"; message: string; prompt: string }
-  | { kind: "completed"; imageUrl: string; prompt: string }
+  | { kind: "completed"; imageUrl: string; downloadUrl?: string; prompt?: string }
   | { kind: "error"; message: string };
 
 const TEXT_FIELDS: [keyof DesignFormValues, string, { max: number; textarea?: boolean; placeholder?: string; required?: boolean }][] = [
@@ -49,13 +52,13 @@ const TEXT_FIELDS: [keyof DesignFormValues, string, { max: number; textarea?: bo
   ["targetAudience", "Target audience", { max: 500 }],
 ];
 
-export function DesignForm({ userId, initial, designId: initialId, aiConfigured }: Props) {
+export function DesignForm({ userId, initial, designId: initialId, aiConfigured, imagesConnected, initialImage }: Props) {
   const router = useRouter();
   const [v, setV] = useState<DesignFormValues>(initial);
   const [designId, setDesignId] = useState<string | null>(initialId);
   const [copyState, setCopyState] = useState<{ kind: "idle" | "loading" | "error"; message?: string }>({ kind: "idle" });
   const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState<ImageResult | null>(null);
+  const [result, setResult] = useState<ImageResult | null>(initialImage ? { kind: "completed", ...initialImage } : null);
 
   const set = <K extends keyof DesignFormValues>(k: K, value: DesignFormValues[K]) => setV((x) => ({ ...x, [k]: value }));
   const missing = [!v.businessName.trim() && "Business name", !v.productName.trim() && "Product / service"].filter(Boolean) as string[];
@@ -129,7 +132,9 @@ export function DesignForm({ userId, initial, designId: initialId, aiConfigured 
         router.refresh();
       }
       if (data.status === "not_connected") setResult({ kind: "not_connected", message: data.message, prompt: data.prompt });
-      else if (data.status === "completed") setResult({ kind: "completed", imageUrl: data.imageUrl, prompt: data.prompt });
+      else if (data.status === "completed" && data.imageUrl) {
+        setResult({ kind: "completed", imageUrl: data.imageUrl, downloadUrl: data.downloadUrl, prompt: data.prompt });
+      }
       else setResult({ kind: "error", message: data.error ?? `Request failed (${res.status}).` });
     } catch {
       setResult({ kind: "error", message: "Network error — please try again." });
@@ -237,8 +242,17 @@ export function DesignForm({ userId, initial, designId: initialId, aiConfigured 
         </fieldset>
 
         <div className="card space-y-2">
-          <button className="btn-primary w-full" disabled={saving}>{saving ? "Saving…" : designId ? "Save changes & generate image" : "Save design & generate image"}</button>
-          <p className="text-sm text-muted">Image generation isn&apos;t connected yet — your design brief and copy will be saved, but no image will be created.</p>
+          <button className="btn-primary w-full" disabled={saving}>
+            {saving ? (imagesConnected ? "Creating your image… (this can take up to a minute)" : "Saving…") : designId ? "Save changes & generate image" : "Save design & generate image"}
+          </button>
+          {imagesConnected ? (
+            <p className="text-sm text-muted">
+              Images are made by Pollinations.ai from your brief. Your uploaded logo and photos aren&apos;t sent to it, so add them to the
+              finished image yourself.
+            </p>
+          ) : (
+            <p className="text-sm text-muted">Image generation isn&apos;t connected yet — your design brief and copy will be saved, but no image will be created.</p>
+          )}
         </div>
       </form>
 
@@ -269,8 +283,16 @@ export function DesignForm({ userId, initial, designId: initialId, aiConfigured 
           </>
         )}
         {result?.kind === "completed" && (
-          // eslint-disable-next-line @next/next/no-img-element -- provider URLs are arbitrary remote hosts
-          <img src={result.imageUrl} alt="Generated design" className="card w-full p-2" />
+          <div className="card space-y-3">
+            <p className="text-sm font-medium">Generated image</p>
+            {/* eslint-disable-next-line @next/next/no-img-element -- short-lived signed URL from private storage */}
+            <img src={result.imageUrl} alt={`AI-generated ${v.designType.toLowerCase()} for ${v.productName || "your product"}`} className="w-full rounded-lg border border-border" />
+            <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+              AI images often get words wrong. Check the business name, prices and contact details before you post or print it,
+              and use the copy above if any text needs fixing.
+            </p>
+            {result.downloadUrl && <a href={result.downloadUrl} className="btn-secondary inline-flex">Download image</a>}
+          </div>
         )}
         {result?.kind === "error" && (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800" role="alert">

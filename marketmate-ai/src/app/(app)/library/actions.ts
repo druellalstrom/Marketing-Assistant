@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { removeDesignImageIfUnused } from "@/lib/data/designs";
 import { getAuthContext } from "@/lib/supabase/server";
 import { isLibraryKind, LIBRARY_KINDS, libraryHref, type LibraryKind } from "@/lib/library";
 
@@ -54,7 +55,14 @@ export async function duplicateItem(kind: LibraryKind, id: string) {
 export async function deleteItem(kind: LibraryKind, id: string, redirectTo?: string) {
   const auth = await getAuthContext();
   if (!auth || !valid(kind, id)) return;
+  let imagePath: string | null = null;
+  if (kind === "designs") {
+    const { data } = await auth.supabase.from("designs").select("output_path").eq("id", id).maybeSingle();
+    imagePath = data?.output_path ?? null;
+  }
   await auth.supabase.from(LIBRARY_KINDS[kind].table).delete().eq("id", id);
+  // Duplicates share the file, so it's only removed once nothing points at it.
+  await removeDesignImageIfUnused(auth.supabase, imagePath);
   revalidate();
   if (redirectTo?.startsWith("/")) redirect(redirectTo);
 }

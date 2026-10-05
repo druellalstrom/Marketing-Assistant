@@ -4,11 +4,16 @@ import { getAuthContext } from "@/lib/supabase/server";
 import { buildImagePrompt, designBriefSchema, uploadsBelongToUser } from "@/lib/design/brief";
 import { getImageProvider } from "@/lib/design/provider";
 import { getPrimaryBusiness } from "@/lib/data/business";
+import { designImageUrls, removeDesignImageIfUnused, saveGeneratedImage } from "@/lib/data/designs";
+
+// Image models can take a while.
+export const maxDuration = 150;
 
 /**
  * Saves a design brief and asks the configured image provider for an image.
- * With no provider connected this honestly returns 501 "not_connected" and
- * never produces or pretends to produce an image.
+ * A generated image is stored in the user's private storage folder. With no
+ * provider connected this honestly returns 501 "not_connected" and never
+ * produces or pretends to produce an image.
  */
 export async function POST(request: Request) {
   const auth = await getAuthContext();
@@ -33,8 +38,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid upload path." }, { status: 400 });
   }
 
-  const prompt = buildImagePrompt(brief);
-  const result = await getImageProvider().generate(prompt, brief);
+  const provider = getImageProvider();
+  const prompt = buildImagePrompt(brief, { includeUploads: provider.usesUploads });
+  const generated = await provider.generate(prompt, brief);
+
+  let outputPath: string | null = null;
+  let result: { status: "completed" | "failed" | "not_connected"; provider: string | null; error?: string; message?: string };
+  if (generated.status === "completed") {
+    outputPath = await saveGeneratedImage(auth.supabase, auth.user.id, generated.image);
+    result = outputPath
+      ? { status: "completed", provider: generated.provider }
+      : { status: "failed", provider: generated.provider, error: "The image was generated but couldn't be saved. Please try again." };
+  } else {
+    result = generated;
+  }
+
+  // A new image replaces the old file; a failed attempt keeps the previous image.
+  let previousPath: string | null = null;
+  if (designId) {
+    const { data } = await auth.supabase.from("designs").select("output_path").eq("id", designId as string).maybeSingle();
+    previousPath = data?.output_path ?? null;
+  }
 
   const row = {
     title: brief.title || `${brief.productName} — ${brief.designType}`,
@@ -43,15 +67,14 @@ export async function POST(request: Request) {
     upload_paths: Object.values(brief.uploads).filter(Boolean),
     status: result.status,
     provider: result.provider,
-    output_path: result.status === "completed" ? result.imageUrl : null,
+    output_path: outputPath ?? previousPath,
     error: result.status === "failed" ? result.error : null,
   };
 
-  let savedId: string;
+  let savedId: string | null = null;
   if (designId) {
     const { data, error } = await auth.supabase.from("designs").update(row).eq("id", designId as string).select("id");
-    if (error || !data?.length) return NextResponse.json({ error: "Could not save the design brief." }, { status: 500 });
-    savedId = data[0].id;
+    if (!error && data?.length) savedId = data[0].id;
   } else {
     const business = await getPrimaryBusiness(auth.supabase);
     const { data, error } = await auth.supabase
@@ -59,11 +82,18 @@ export async function POST(request: Request) {
       .insert({ ...row, business_id: business?.id ?? null })
       .select("id")
       .single();
-    if (error) return NextResponse.json({ error: "Could not save the design brief." }, { status: 500 });
-    savedId = data.id;
+    if (!error) savedId = data.id;
   }
+  if (!savedId) {
+    await removeDesignImageIfUnused(auth.supabase, outputPath); // don't leave an orphaned file
+    return NextResponse.json({ error: "Could not save the design brief." }, { status: 500 });
+  }
+
+  if (outputPath && previousPath && previousPath !== outputPath) await removeDesignImageIfUnused(auth.supabase, previousPath);
+
+  const urls = outputPath ? await designImageUrls(auth.supabase, outputPath, row.title) : null;
 
   // 501 Not Implemented is the honest status while no provider is connected.
   const status = result.status === "not_connected" ? 501 : result.status === "failed" ? 502 : 200;
-  return NextResponse.json({ ...result, designId: savedId, prompt }, { status });
+  return NextResponse.json({ ...result, ...urls, designId: savedId, prompt }, { status });
 }

@@ -69,16 +69,15 @@ export default async function SettingsPage() {
             <li className="rounded-2xl border border-border p-4">
               <div className="flex flex-wrap items-center gap-3">
                 <ImageIcon aria-hidden className="h-6 w-6 text-purple" />
-                <span className="flex-1 text-base font-semibold">Image generation (Design Studio)</span>
+                <span className="flex-1 text-base font-semibold">Image generation (Design Studio{imagesReady ? " · Pollinations.ai" : ""})</span>
                 {status(imagesReady)}
               </div>
               {!imagesReady && (
-                <p className="mt-3 text-[0.9375rem] text-slate-700">
-                  No image provider is built in yet. A developer adds one (for example Pollinations.ai or a paid image API)
-                  in <code className="rounded bg-slate-100 px-1.5">src/lib/design/provider.ts</code> and sets{" "}
-                  <code className="rounded bg-slate-100 px-1.5">IMAGE_PROVIDER</code>. Until then, Design Studio saves your
-                  briefs and writes the copy, but doesn&apos;t create images.
-                </p>
+                <ol className="mt-3 list-decimal space-y-1 pl-6 text-[0.9375rem] text-slate-700">
+                  <li>Sign up at <a className="font-semibold text-brand-strong underline" href="https://enter.pollinations.ai" target="_blank" rel="noreferrer">enter.pollinations.ai</a> and create a <strong>secret</strong> key (it starts with <code className="rounded bg-slate-100 px-1.5">sk_</code>).</li>
+                  <li>In <code className="rounded bg-slate-100 px-1.5">.env.local</code>, set <code className="rounded bg-slate-100 px-1.5">IMAGE_PROVIDER=pollinations</code> and <code className="rounded bg-slate-100 px-1.5">POLLINATIONS_API_KEY=your-key</code>.</li>
+                  <li>Restart the app. Until then, Design Studio saves your briefs and writes the copy, but doesn&apos;t create images.</li>
+                </ol>
               )}
             </li>
           </ul>
