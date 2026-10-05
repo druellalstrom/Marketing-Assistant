@@ -28,6 +28,7 @@ import { displayNameFor, firstNameOf } from "@/lib/dashboard/account";
 import { getDashboardData, type RecentProject } from "@/lib/data/dashboard";
 import { getImageProvider } from "@/lib/design/provider";
 import { libraryHref } from "@/lib/library";
+import { formatMoney } from "@/lib/pricing/money";
 import { requireAuth } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -281,6 +282,50 @@ export default async function DashboardPage() {
             </ul>
           </section>
         </div>
+
+          <section className="card" aria-labelledby="prices-title">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <Calculator aria-hidden className="mt-1 h-6 w-6 text-green-800" />
+                <div>
+                  <h2 id="prices-title" className="text-xl font-bold text-navy">Your Prices</h2>
+                  <p className="text-[0.9375rem] text-muted">From the Smart Pricing Calculator</p>
+                </div>
+              </div>
+              <Link href="/calculator" className="btn-primary">Price My Product</Link>
+            </div>
+            {data.pricing.latest.length ? (
+              <>
+                <div className="mt-4 flex flex-wrap gap-x-8 gap-y-3">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-wide text-muted">Saved products</p>
+                    <p className="text-3xl font-extrabold text-navy">{data.stats.pricedTotal}</p>
+                  </div>
+                  {data.pricing.potentialProfit.map((t) => (
+                    <div key={t.currency}>
+                      <p className="text-sm font-semibold uppercase tracking-wide text-muted">Potential profit ({t.currency})</p>
+                      <p className={`text-3xl font-extrabold tabular-nums ${t.amount < 0 ? "text-red-700" : "text-green-800"}`}>{formatMoney(t.amount, t.currency)}</p>
+                      <p className="text-sm text-muted">if all {t.products} product{t.products === 1 ? "" : "s"} sell out</p>
+                    </div>
+                  ))}
+                </div>
+                <ul className="mt-4 divide-y divide-border">
+                  {data.pricing.latest.map((v) => (
+                    <li key={v.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
+                      <Link href={`/calculator?load=${v.id}`} className="font-semibold text-navy hover:text-brand-strong hover:underline [overflow-wrap:anywhere]">
+                        <span aria-hidden>{v.emoji} </span>{v.name}
+                      </Link>
+                      <span className="text-[0.9375rem] tabular-nums">
+                        Sell for <strong>{formatMoney(v.price, v.currency)}</strong> · <span className={v.profit < 0 ? "text-red-700" : "text-green-800"}>{formatMoney(v.profit, v.currency)} profit</span> per {v.one}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p className="mt-4 text-[0.9375rem] text-muted">No prices saved yet. Find out what to charge in a minute with the Smart Pricing Calculator.</p>
+            )}
+          </section>
 
           <section className="card" aria-labelledby="recent-title">
             <div className="flex items-start justify-between gap-3">

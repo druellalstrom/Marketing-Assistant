@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getBrandKit, getPrimaryBusiness, type BrandKitRow, type BusinessRow } from "./business";
 import { progressTasks, startOfMonth, startOfWeeksAgo, weeklyCounts, type ProgressTask, type WeekBucket } from "@/lib/dashboard/stats";
 import type { LibraryKind } from "@/lib/library";
+import { pricingRowView, type PricingRowView } from "@/lib/pricing/smart-schema";
 
 export interface RecentProject {
   id: string;
@@ -37,6 +38,12 @@ export interface DashboardData {
   };
   recent: RecentProject[];
   upcoming: UpcomingPost[];
+  pricing: {
+    /** Latest saved prices (from the Smart Pricing Calculator). */
+    latest: (PricingRowView & { id: string; name: string })[];
+    /** Potential profit if everything sells, totalled per currency (never mixed). */
+    potentialProfit: { currency: string; amount: number; products: number }[];
+  };
 }
 
 const humanize = (s: string) => s.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
@@ -61,6 +68,7 @@ export async function getDashboardData(supabase: SupabaseClient, now: Date): Pro
     wContent, wPlans, wCampaigns, wDesigns,
     rContent, rPlans, rCampaigns, rDesigns, rPricing,
     upcoming,
+    pricingRows,
   ] = await Promise.all([
     business ? getBrandKit(supabase, business.id) : Promise.resolve(null),
     count("social_content"), count("marketing_plans"), count("campaigns"), count("designs"), count("pricing_calculations"), count("content_calendar_entries"),
@@ -79,6 +87,11 @@ export async function getDashboardData(supabase: SupabaseClient, now: Date): Pro
       .neq("status", "posted")
       .order("scheduled_for")
       .limit(4),
+    supabase
+      .from("pricing_calculations")
+      .select("id, product_name, results, cost_per_unit, suggested_retail_price")
+      .order("updated_at", { ascending: false })
+      .limit(200),
   ]);
 
   const n = (r: { count: number | null }) => r.count ?? 0;
@@ -119,5 +132,21 @@ export async function getDashboardData(supabase: SupabaseClient, now: Date): Pro
     },
     recent: recentProjects,
     upcoming: rows<UpcomingPost>(upcoming),
+    pricing: pricingSummary(rows<{ id: string; product_name: string; results: unknown; cost_per_unit: number; suggested_retail_price: number }>(pricingRows)),
+  };
+}
+
+/** Latest prices and potential profit per currency. Old calculations without a total are skipped in the sum. */
+export function pricingSummary(list: { id: string; product_name: string; results: unknown; cost_per_unit: number; suggested_retail_price: number }[]): DashboardData["pricing"] {
+  const views = list.map((r) => ({ ...pricingRowView(r), id: r.id, name: r.product_name }));
+  const totals = new Map<string, { amount: number; products: number }>();
+  for (const v of views) {
+    if (v.totalProfit === null) continue;
+    const t = totals.get(v.currency) ?? { amount: 0, products: 0 };
+    totals.set(v.currency, { amount: t.amount + v.totalProfit, products: t.products + 1 });
+  }
+  return {
+    latest: views.slice(0, 3),
+    potentialProfit: [...totals.entries()].map(([currency, t]) => ({ currency, ...t })).sort((a, b) => b.products - a.products),
   };
 }

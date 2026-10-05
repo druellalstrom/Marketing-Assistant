@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { formatMoney } from "@/lib/pricing/money";
+import { pricingRowView } from "@/lib/pricing/smart-schema";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { LIBRARY_TABS, libraryHref, SOCIAL_CONTENT_TYPES, type LibraryKind, type LibraryTab } from "@/lib/library";
@@ -53,12 +55,14 @@ export default async function LibraryPage({ searchParams }: PageProps<"/library"
     failed = Boolean(error);
     rows = (data ?? []).map((d) => ({ id: d.id, title: d.title ?? "Untitled", subtitle: [humanize(d.content_type), d.platform].filter(Boolean).join(" · "), updated_at: d.updated_at, table: "social_content", kind: "content" }));
   } else if (tab === "pricing") {
-    let query = supabase.from("pricing_calculations").select("id, product_name, suggested_retail_price, cost_per_unit, updated_at");
+    let query = supabase.from("pricing_calculations").select("id, product_name, results, suggested_retail_price, cost_per_unit, updated_at");
     if (like) query = query.ilike("product_name", like);
     const { data, error } = await query.order("updated_at", { ascending: false }).limit(100);
     failed = Boolean(error);
-    const fmt = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
-    rows = (data ?? []).map((d) => ({ id: d.id, title: d.product_name, subtitle: `Cost ${fmt.format(Number(d.cost_per_unit))} · retail ${fmt.format(Number(d.suggested_retail_price))}`, updated_at: d.updated_at, table: "pricing_calculations", kind: "pricing" }));
+    rows = (data ?? []).map((d) => {
+      const v = pricingRowView(d);
+      return { id: d.id, title: d.product_name, subtitle: `Cost ${formatMoney(v.cost, v.currency)} · sell for ${formatMoney(v.price, v.currency)} per ${v.one}`, updated_at: d.updated_at, table: "pricing_calculations", kind: "pricing" };
+    });
   } else if (tab === "plans") {
     let query = supabase.from("marketing_plans").select("id, title, plan_type, updated_at");
     if (like) query = query.ilike("title", like);

@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Search" };
 const FEATURES: { title: string; href: string; keywords: string }[] = [
   ...NAV_ITEMS.map((n) => ({ title: n.label, href: n.href, keywords: n.label })),
   { title: "Create a poster / flyer", href: "/design-studio", keywords: "poster flyer banner business card graphic design image ad" },
-  { title: "Price a product", href: "/calculator", keywords: "price pricing cost profit margin markup wholesale retail break-even calculator" },
+  { title: "Price a product", href: "/calculator", keywords: "smart price pricing cost profit margin markup wholesale retail break-even calculator package bundle portion discount currency" },
   { title: TOOL_DEFINITIONS.caption.title, href: "/social/captions", keywords: "caption instagram facebook tiktok linkedin post" },
   { title: TOOL_DEFINITIONS.hashtags.title, href: "/social/hashtags", keywords: "hashtag tags" },
   { title: TOOL_DEFINITIONS.content_ideas.title, href: "/social/ideas", keywords: "ideas content posts inspiration" },

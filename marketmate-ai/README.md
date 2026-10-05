@@ -54,7 +54,7 @@ Next.js 16 (App Router) · TypeScript · Tailwind CSS v4 · Supabase (Postgres +
 | Dashboard | `/dashboard` | Quick actions, business profile, recent projects, content, designs, pricing, plans, calendar |
 | AI Marketing Assistant | `/assistant` | Knows the business profile; uses the calculator for pricing and can save business details to the profile |
 | Saved work | `/library` | Designs, Social Media, Pricing, Marketing Plans, Campaigns, Content — open, edit, duplicate, rename, delete |
-| Pricing calculator | `/calculator` | Production-run costs (total or per unit) → cost per unit, retail/wholesale price, profit, margin, markup, break-even |
+| Smart Pricing Calculator | `/calculator` | Simple/Advanced modes: what you bought + other costs → true cost per item, packages/portions (with kg/g, L/ml… conversion), price by profit amount, markup or margin, smart rounding, wholesale, sale tester, break-even, fees, tax, currencies (user-entered rates only), "Show me how", My Products |
 | Social Media Center | `/social/*` | Captions, hashtags, content ideas, repurposing, content calendar |
 | Marketing Strategy | `/strategy/*` | Audience analysis, personas, marketing plan, campaigns, competitor analysis (user-provided info only) |
 | Content Creation Studio | `/studio` | 11 content types × tone × length × objective |
@@ -63,7 +63,11 @@ Next.js 16 (App Router) · TypeScript · Tailwind CSS v4 · Supabase (Postgres +
 
 ## How it's put together
 
-- `src/lib/pricing/` — pure calculator functions (production cost, target-margin pricing with fees,
+- `src/lib/pricing/smart.ts`, `money.ts`, `categories.ts` — the Smart Pricing Calculator engine (reusable, unit-tested
+  functions: costs, packages, pricing methods, break-even, discounts, wholesale, rounding, unit and
+  currency conversion, plain-English explanation). Saved under `pricing_calculations.inputs` (version 2).
+- `src/lib/pricing/calculator.ts` — the earlier production-run calculator, still used by the AI assistant's pricing tool:
+  pure calculator functions (production cost, target-margin pricing with fees,
   margin/markup, break-even). The UI, the save action and the AI assistant all call these; the
   server recomputes results rather than trusting the browser.
 - `supabase/migrations/` — 11 tables (`users`, `businesses`, `brand_kits`, `projects`, `designs`,
