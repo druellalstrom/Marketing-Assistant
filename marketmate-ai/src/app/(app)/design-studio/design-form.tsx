@@ -31,7 +31,8 @@ interface Props {
   initial: DesignFormValues;
   designId: string | null;
   aiConfigured: boolean;
-  imagesConnected: boolean;
+  /** The connected image provider, or null when image generation is off. */
+  imageProvider: { label: string; usesUploads: boolean } | null;
   /** The saved design's current image, if it has one. */
   initialImage?: { imageUrl: string; downloadUrl: string } | null;
 }
@@ -52,7 +53,7 @@ const TEXT_FIELDS: [keyof DesignFormValues, string, { max: number; textarea?: bo
   ["targetAudience", "Target audience", { max: 500 }],
 ];
 
-export function DesignForm({ userId, initial, designId: initialId, aiConfigured, imagesConnected, initialImage }: Props) {
+export function DesignForm({ userId, initial, designId: initialId, aiConfigured, imageProvider, initialImage }: Props) {
   const router = useRouter();
   const [v, setV] = useState<DesignFormValues>(initial);
   const [designId, setDesignId] = useState<string | null>(initialId);
@@ -243,12 +244,14 @@ export function DesignForm({ userId, initial, designId: initialId, aiConfigured,
 
         <div className="card space-y-2">
           <button className="btn-primary w-full" disabled={saving}>
-            {saving ? (imagesConnected ? "Creating your image… (this can take up to a minute)" : "Saving…") : designId ? "Save changes & generate image" : "Save design & generate image"}
+            {saving ? (imageProvider ? "Creating your image… (this can take up to a minute)" : "Saving…") : designId ? "Save changes & generate image" : "Save design & generate image"}
           </button>
-          {imagesConnected ? (
+          {imageProvider ? (
             <p className="text-sm text-muted">
-              Images are made by Pollinations.ai from your brief. Your uploaded logo and photos aren&apos;t sent to it, so add them to the
-              finished image yourself.
+              Images are made by {imageProvider.label} from your brief
+              {imageProvider.usesUploads
+                ? ", including your uploaded logo and photos."
+                : ". Your uploaded logo and photos aren't sent to it, so add them to the finished image yourself."}
             </p>
           ) : (
             <p className="text-sm text-muted">Image generation isn&apos;t connected yet — your design brief and copy will be saved, but no image will be created.</p>

@@ -4,7 +4,7 @@ import { getAuthContext } from "@/lib/supabase/server";
 import { buildImagePrompt, designBriefSchema, uploadsBelongToUser } from "@/lib/design/brief";
 import { getImageProvider } from "@/lib/design/provider";
 import { getPrimaryBusiness } from "@/lib/data/business";
-import { designImageUrls, removeDesignImageIfUnused, saveGeneratedImage } from "@/lib/data/designs";
+import { designImageUrls, loadReferenceImages, removeDesignImageIfUnused, saveGeneratedImage } from "@/lib/data/designs";
 
 // Image models can take a while.
 export const maxDuration = 150;
@@ -39,8 +39,11 @@ export async function POST(request: Request) {
   }
 
   const provider = getImageProvider();
-  const prompt = buildImagePrompt(brief, { includeUploads: provider.usesUploads });
-  const generated = await provider.generate(prompt, brief);
+  // Providers that accept images get the user's uploads; the prompt only mentions the ones actually sent.
+  const references = provider.usesUploads ? await loadReferenceImages(auth.supabase, brief.uploads) : [];
+  const sent = Object.fromEntries(references.map((r) => [r.role, brief.uploads[r.role]]));
+  const prompt = buildImagePrompt({ ...brief, uploads: sent }, { includeUploads: provider.usesUploads });
+  const generated = await provider.generate(prompt, brief, references);
 
   let outputPath: string | null = null;
   let result: { status: "completed" | "failed" | "not_connected"; provider: string | null; error?: string; message?: string };

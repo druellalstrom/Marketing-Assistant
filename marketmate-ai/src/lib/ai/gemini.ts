@@ -19,7 +19,7 @@ export function isGeminiConfigured(): boolean {
 }
 
 let client: GoogleGenAI | null = null;
-function getClient(): GoogleGenAI {
+export function getGeminiClient(): GoogleGenAI {
   if (!process.env.GEMINI_API_KEY) throw new AiNotConfiguredError();
   client ??= new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY,
@@ -42,8 +42,15 @@ const BLOCKED: string[] = [
 ];
 
 /** Maps SDK/network failures to safe messages the UI can show. */
-function mapError(err: unknown): never {
+export function mapGeminiError(err: unknown, model: string = GEMINI_MODEL, setting = "GEMINI_MODEL"): never {
   if (err instanceof ApiError) {
+    // A free-tier quota of 0 means the model isn't included in the free tier at all.
+    if (err.status === 429 && /limit:\s*0\b/i.test(err.message)) {
+      throw new AiGenerationError(
+        `Your Gemini key's free tier doesn't include the "${model}" model. Turn on billing in Google AI Studio, or set ${setting} to a model your key can use.`,
+        429,
+      );
+    }
     if (err.status === 429) {
       throw new AiGenerationError(
         "The AI's free usage limit has been reached for now. Please wait a minute and try again.",
@@ -54,7 +61,7 @@ function mapError(err: unknown): never {
       throw new AiGenerationError("The server's Gemini API key was rejected.", 502);
     }
     if (err.status === 404) {
-      throw new AiGenerationError(`The AI model "${GEMINI_MODEL}" isn't available. Check GEMINI_MODEL.`, 502);
+      throw new AiGenerationError(`The AI model "${model}" isn't available. Check ${setting}.`, 502);
     }
     if (err.status >= 500) {
       throw new AiGenerationError("The AI service is busy right now. Please try again in a moment.", 503);
@@ -87,7 +94,7 @@ export interface GeminiCallParams {
 
 /** The one place the app calls Gemini. */
 export async function callGemini({ system, contents, functionDeclarations }: GeminiCallParams): Promise<GenerateContentResponse> {
-  const ai = getClient();
+  const ai = getGeminiClient();
   let response: GenerateContentResponse;
   try {
     response = await ai.models.generateContent({
@@ -100,7 +107,7 @@ export async function callGemini({ system, contents, functionDeclarations }: Gem
       },
     });
   } catch (err) {
-    mapError(err);
+    mapGeminiError(err);
   }
   assertNotBlocked(response);
   return response;

@@ -60,17 +60,20 @@ export const designBriefSchema = z
 
 export type DesignBrief = z.infer<typeof designBriefSchema>;
 
-/** Output size in pixels for each format (multiples of 16, under 1.6 megapixels). */
-export const DESIGN_DIMENSIONS: Record<(typeof DESIGN_TYPES)[number], { width: number; height: number }> = {
-  "Promotional poster": { width: 896, height: 1280 },
-  "Social media graphic": { width: 1024, height: 1024 },
-  Flyer: { width: 896, height: 1280 },
-  "Product advertisement": { width: 1024, height: 1024 },
-  "Business card": { width: 1344, height: 768 },
-  "Instagram post (1:1)": { width: 1024, height: 1024 },
-  "Instagram / TikTok story (9:16)": { width: 720, height: 1280 },
-  "Facebook post": { width: 1216, height: 640 },
-  "Promotional banner": { width: 1536, height: 512 },
+/**
+ * Output shape for each format: pixel size (multiples of 16, under 1.6 megapixels)
+ * and the closest aspect ratio Gemini supports.
+ */
+export const DESIGN_DIMENSIONS: Record<(typeof DESIGN_TYPES)[number], { width: number; height: number; aspectRatio: string }> = {
+  "Promotional poster": { width: 896, height: 1280, aspectRatio: "3:4" },
+  "Social media graphic": { width: 1024, height: 1024, aspectRatio: "1:1" },
+  Flyer: { width: 896, height: 1280, aspectRatio: "3:4" },
+  "Product advertisement": { width: 1024, height: 1024, aspectRatio: "1:1" },
+  "Business card": { width: 1344, height: 768, aspectRatio: "16:9" },
+  "Instagram post (1:1)": { width: 1024, height: 1024, aspectRatio: "1:1" },
+  "Instagram / TikTok story (9:16)": { width: 720, height: 1280, aspectRatio: "9:16" },
+  "Facebook post": { width: 1216, height: 640, aspectRatio: "16:9" },
+  "Promotional banner": { width: 1536, height: 512, aspectRatio: "21:9" },
 };
 
 /**

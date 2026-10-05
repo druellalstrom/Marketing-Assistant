@@ -96,7 +96,8 @@ export default async function DesignStudioPage({ searchParams }: PageProps<"/des
     .select("id, title, design_type, status, updated_at")
     .order("updated_at", { ascending: false })
     .limit(8);
-  const connected = getImageProvider().connected;
+  const imageProvider = getImageProvider();
+  const connected = imageProvider.connected;
 
   return (
     <>
@@ -112,8 +113,9 @@ export default async function DesignStudioPage({ searchParams }: PageProps<"/des
       )}
       {connected && (
         <p className="mb-6 rounded-lg border border-border bg-white p-3 text-sm text-slate-700">
-          <strong>Image generation: connected (Pollinations.ai).</strong> Your brief, without your uploads, is sent to
-          Pollinations to create the image. Generated images are saved privately to your account.
+          <strong>Image generation: connected ({imageProvider.label}).</strong> Your brief
+          {imageProvider.usesUploads ? " and uploads are" : ", without your uploads, is"} sent to {imageProvider.label} to create
+          the image. Generated images are saved privately to your account.
         </p>
       )}
       {loadedId && (
@@ -121,7 +123,7 @@ export default async function DesignStudioPage({ searchParams }: PageProps<"/des
           Editing a saved design. <Link href="/design-studio" className="text-brand hover:underline">Start a new one</Link>
         </p>
       )}
-      <DesignForm key={loadedId ?? "new"} userId={user.id} initial={initial} designId={loadedId} aiConfigured={isAiConfigured()} imagesConnected={connected} initialImage={initialImage} />
+      <DesignForm key={loadedId ?? "new"} userId={user.id} initial={initial} designId={loadedId} aiConfigured={isAiConfigured()} imageProvider={connected ? { label: imageProvider.label, usesUploads: imageProvider.usesUploads } : null} initialImage={initialImage} />
 
       <section className="mt-10">
         <div className="mb-3 flex items-center justify-between">

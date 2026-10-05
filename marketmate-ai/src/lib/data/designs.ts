@@ -43,3 +43,21 @@ export async function removeDesignImageIfUnused(supabase: SupabaseClient, path: 
   if (error || (count ?? 0) > 0) return;
   await supabase.storage.from(DESIGN_BUCKET).remove([path]);
 }
+
+const REFERENCE_TYPES = ["image/png", "image/jpeg", "image/webp"];
+
+/** Loads the brief's uploads (logo, product photo, reference) from private storage for providers that use them. */
+export async function loadReferenceImages(
+  supabase: SupabaseClient,
+  uploads: { logo?: string; productPhoto?: string; reference?: string },
+): Promise<{ role: "logo" | "productPhoto" | "reference"; bytes: Uint8Array; contentType: string }[]> {
+  const entries = (["logo", "productPhoto", "reference"] as const).filter((role) => uploads[role]);
+  const loaded = await Promise.all(
+    entries.map(async (role) => {
+      const { data } = await supabase.storage.from(DESIGN_BUCKET).download(uploads[role]!);
+      if (!data || !REFERENCE_TYPES.includes(data.type)) return null; // e.g. SVG logos can't be sent
+      return { role, bytes: new Uint8Array(await data.arrayBuffer()), contentType: data.type };
+    }),
+  );
+  return loaded.filter((r) => r !== null);
+}
