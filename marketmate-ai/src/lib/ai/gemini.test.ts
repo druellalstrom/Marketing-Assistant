@@ -86,14 +86,14 @@ describe("generateWithGemini", () => {
     await expect(generateWithGemini("x")).rejects.toMatchObject({ status: 502, message: expect.stringMatching(/empty/) });
   });
 
-  it("explains the free-tier rate limit after retrying", async () => {
+  it("explains the free-tier rate limit without spending quota on retries", async () => {
     script = [apiError(429, "Resource has been exhausted")];
     const { generateWithGemini } = await import("./gemini");
     await expect(generateWithGemini("x")).rejects.toMatchObject({
       status: 429,
       message: expect.stringMatching(/free usage limit.*wait a minute/),
     });
-    expect(requests.length).toBe(3);
+    expect(requests.length).toBe(1);
   }, 20_000);
 
   it("maps a rejected key without leaking it", async () => {

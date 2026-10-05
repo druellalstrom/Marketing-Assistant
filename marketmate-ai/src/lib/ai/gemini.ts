@@ -27,7 +27,8 @@ export function getGeminiClient(): GoogleGenAI {
       // Optional override (proxies / tests); defaults to Google's endpoint.
       ...(process.env.GEMINI_BASE_URL ? { baseUrl: process.env.GEMINI_BASE_URL } : {}),
       timeout: 110_000,
-      retryOptions: { attempts: 3 },
+      // Retry outages, but not 429s: on the free tier each retry spends more quota.
+      retryOptions: { attempts: 3, httpStatusCodes: [408, 500, 502, 503, 504] },
     },
   });
   return client;
@@ -44,6 +45,8 @@ const BLOCKED: string[] = [
 /** Maps SDK/network failures to safe messages the UI can show. */
 export function mapGeminiError(err: unknown, model: string = GEMINI_MODEL, setting = "GEMINI_MODEL"): never {
   if (err instanceof ApiError) {
+    // Google's own explanation (quota name, limit, model), for the server terminal only.
+    console.warn(`Gemini API error ${err.status} (model ${model}): ${err.message.slice(0, 600)}`);
     // A free-tier quota of 0 means the model isn't included in the free tier at all.
     if (err.status === 429 && /limit:\s*0\b/i.test(err.message)) {
       throw new AiGenerationError(
