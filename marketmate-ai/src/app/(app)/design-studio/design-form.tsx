@@ -32,7 +32,7 @@ interface Props {
   designId: string | null;
   aiConfigured: boolean;
   /** The connected image provider, or null when image generation is off. */
-  imageProvider: { label: string; usesUploads: boolean } | null;
+  imageProvider: { label: string; usesUploads: boolean; note: string | null } | null;
   /** The saved design's current image, if it has one. */
   initialImage?: { imageUrl: string; downloadUrl: string } | null;
 }
@@ -252,6 +252,7 @@ export function DesignForm({ userId, initial, designId: initialId, aiConfigured,
               {imageProvider.usesUploads
                 ? ", including your uploaded logo and photos."
                 : ". Your uploaded logo and photos aren't sent to it, so add them to the finished image yourself."}
+              {imageProvider.note && ` ${imageProvider.note}`}
             </p>
           ) : (
             <p className="text-sm text-muted">Image generation isn&apos;t connected yet — your design brief and copy will be saved, but no image will be created.</p>

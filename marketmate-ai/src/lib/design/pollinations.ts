@@ -18,6 +18,7 @@ const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
 export class PollinationsProvider implements ImageProvider {
   readonly id = "pollinations";
   readonly label = "Pollinations.ai";
+  readonly note = null;
   readonly connected = true;
   readonly usesUploads = false;
 

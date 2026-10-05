@@ -25,7 +25,9 @@ Next.js 16 (App Router) · TypeScript · Tailwind CSS v4 · Supabase (Postgres +
    | `GEMINI_FALLBACK_MODELS` (optional) | backups tried when a model is overloaded or out of free quota; defaults to `gemini-flash-lite-latest,gemini-2.5-flash,gemini-2.5-flash-lite` | No |
    | `ANTHROPIC_API_KEY` / `ANTHROPIC_MODEL` (optional) | used only if `GEMINI_API_KEY` is empty or `AI_PROVIDER=anthropic` | **Yes** (key) |
    | `AI_PROVIDER` (optional) | `gemini` or `anthropic` to force one; default picks Gemini when its key is set | No |
-   | `IMAGE_PROVIDER` | Design Studio: `none` (default), `gemini` (uses `GEMINI_API_KEY`) or `pollinations` | No |
+   | `IMAGE_PROVIDER` | Design Studio: `none` (default), `cloudflare` (free daily allowance), `gemini` (uses `GEMINI_API_KEY`; image model needs billing) or `pollinations` | No |
+   | `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN` | server-only; Cloudflare dashboard → AI → Workers AI → Use REST API | **Yes** (token) |
+   | `CLOUDFLARE_IMAGE_MODEL` (optional) | defaults to `@cf/black-forest-labs/flux-1-schnell` (square images) | No |
    | `GEMINI_IMAGE_MODEL` (optional) | defaults to `gemini-2.5-flash-image` | No |
    | `POLLINATIONS_API_KEY` | server-only; secret `sk_` key from https://enter.pollinations.ai | **Yes** |
    | `POLLINATIONS_MODEL` (optional) | defaults to Pollinations' cheapest model | No |
@@ -56,7 +58,7 @@ Next.js 16 (App Router) · TypeScript · Tailwind CSS v4 · Supabase (Postgres +
 | Social Media Center | `/social/*` | Captions, hashtags, content ideas, repurposing, content calendar |
 | Marketing Strategy | `/strategy/*` | Audience analysis, personas, marketing plan, campaigns, competitor analysis (user-provided info only) |
 | Content Creation Studio | `/studio` | 11 content types × tone × length × objective |
-| Design Studio | `/design-studio` | Full brief + uploads + AI copy; images via Google Gemini or Pollinations.ai when configured |
+| Design Studio | `/design-studio` | Full brief + uploads + AI copy; images via Cloudflare Workers AI, Google Gemini or Pollinations.ai when configured |
 | Business profile / Brand kit | `/business`, `/brand-kit` | Used automatically by every AI feature |
 
 ## How it's put together
@@ -76,7 +78,8 @@ Next.js 16 (App Router) · TypeScript · Tailwind CSS v4 · Supabase (Postgres +
   Browsers call `POST /api/ai/generate` and `/api/assistant`; the routes check the session, validate
   input, add the business profile + brand kit to the prompt, call the AI provider, and save results under RLS.
 - `src/lib/design/` — Design Studio brief schema, image-prompt builder, and image providers:
-  `GeminiImageProvider` (when `IMAGE_PROVIDER=gemini`; sends the brief plus the user's uploaded
+  `CloudflareImageProvider` (when `IMAGE_PROVIDER=cloudflare`; free daily allowance, FLUX.1 schnell,
+  square output), `GeminiImageProvider` (when `IMAGE_PROVIDER=gemini`; sends the brief plus the user's uploaded
   logo/photos and asks for the format's aspect ratio), `PollinationsProvider` (when `IMAGE_PROVIDER=pollinations` and `POLLINATIONS_API_KEY` are set) and
   `NotConnectedProvider` (default; never returns an image and the UI says so). Generated images are
   saved to the user's private `design-uploads/<user_id>/generated/` folder and shown with short-lived

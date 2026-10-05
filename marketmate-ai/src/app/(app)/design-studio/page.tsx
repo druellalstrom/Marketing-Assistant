@@ -123,7 +123,7 @@ export default async function DesignStudioPage({ searchParams }: PageProps<"/des
           Editing a saved design. <Link href="/design-studio" className="text-brand hover:underline">Start a new one</Link>
         </p>
       )}
-      <DesignForm key={loadedId ?? "new"} userId={user.id} initial={initial} designId={loadedId} aiConfigured={isAiConfigured()} imageProvider={connected ? { label: imageProvider.label, usesUploads: imageProvider.usesUploads } : null} initialImage={initialImage} />
+      <DesignForm key={loadedId ?? "new"} userId={user.id} initial={initial} designId={loadedId} aiConfigured={isAiConfigured()} imageProvider={connected ? { label: imageProvider.label, usesUploads: imageProvider.usesUploads, note: imageProvider.note } : null} initialImage={initialImage} />
 
       <section className="mt-10">
         <div className="mb-3 flex items-center justify-between">

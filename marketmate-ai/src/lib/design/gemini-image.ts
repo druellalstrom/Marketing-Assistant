@@ -36,6 +36,7 @@ const REFERENCE_LABEL: Record<ReferenceImage["role"], string> = {
 export class GeminiImageProvider implements ImageProvider {
   readonly id = "gemini";
   readonly label = "Google Gemini";
+  readonly note = null;
   readonly connected = true;
   readonly usesUploads = true;
 

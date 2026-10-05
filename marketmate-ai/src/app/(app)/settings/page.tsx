@@ -76,13 +76,18 @@ export default async function SettingsPage() {
               {!imagesReady && (
                 <div className="mt-3 space-y-2 text-[0.9375rem] text-slate-700">
                   <p>
-                    <strong>Easiest:</strong> use your Gemini key. In <code className="rounded bg-slate-100 px-1.5">.env.local</code>, set{" "}
-                    <code className="rounded bg-slate-100 px-1.5">IMAGE_PROVIDER=gemini</code> (with <code className="rounded bg-slate-100 px-1.5">GEMINI_API_KEY</code> filled in) and restart the app.
+                    <strong>Free: Cloudflare Workers AI</strong> (a daily free allowance, no card needed; square images).
                   </p>
+                  <ol className="list-decimal space-y-1 pl-6">
+                    <li>Sign up free at <a className="font-semibold text-brand-strong underline" href="https://dash.cloudflare.com/sign-up" target="_blank" rel="noreferrer">dash.cloudflare.com</a>.</li>
+                    <li>Open <strong>AI → Workers AI</strong> and choose <strong>Use REST API</strong>. Copy your <strong>Account ID</strong>, then click <strong>Create a Workers AI API Token</strong> and copy the token.</li>
+                    <li>In <code className="rounded bg-slate-100 px-1.5">.env.local</code>, set <code className="rounded bg-slate-100 px-1.5">IMAGE_PROVIDER=cloudflare</code>, <code className="rounded bg-slate-100 px-1.5">CLOUDFLARE_ACCOUNT_ID=your-account-id</code> and <code className="rounded bg-slate-100 px-1.5">CLOUDFLARE_API_TOKEN=your-token</code>.</li>
+                  </ol>
                   <p>
-                    <strong>Or Pollinations.ai:</strong> create a secret key at{" "}
-                    <a className="font-semibold text-brand-strong underline" href="https://enter.pollinations.ai" target="_blank" rel="noreferrer">enter.pollinations.ai</a>, then set{" "}
-                    <code className="rounded bg-slate-100 px-1.5">IMAGE_PROVIDER=pollinations</code> and <code className="rounded bg-slate-100 px-1.5">POLLINATIONS_API_KEY=your-key</code>.
+                    <strong>Other options:</strong> <code className="rounded bg-slate-100 px-1.5">IMAGE_PROVIDER=gemini</code> uses your Gemini key, but Google&apos;s image model needs billing turned
+                    on; <code className="rounded bg-slate-100 px-1.5">IMAGE_PROVIDER=pollinations</code> needs a key from 
+                    <a className="font-semibold text-brand-strong underline" href="https://enter.pollinations.ai" target="_blank" rel="noreferrer">enter.pollinations.ai</a> 
+                    (<code className="rounded bg-slate-100 px-1.5">POLLINATIONS_API_KEY</code>).
                   </p>
                   <p>Restart the app. Until then, Design Studio saves your briefs and writes the copy, but doesn&apos;t create images.</p>
                 </div>
