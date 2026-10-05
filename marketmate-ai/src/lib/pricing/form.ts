@@ -12,19 +12,20 @@ export interface CalculatorFormState {
   actualPrice: string;
 }
 
+/** Starts empty (no example numbers that could be mistaken for the user's own). Blank costs count as $0. */
 export const DEFAULT_FORM: CalculatorFormState = {
   productName: "",
-  quantity: "100",
+  quantity: "",
   costs: {
-    materials: { amount: "300", basis: "total" },
-    packaging: { amount: "0.50", basis: "per_unit" },
-    labor: { amount: "200", basis: "total" },
-    transportation: { amount: "30", basis: "total" },
-    electricity: { amount: "20", basis: "total" },
-    marketing: { amount: "50", basis: "total" },
-    other: { amount: "0", basis: "total" },
+    materials: { amount: "", basis: "total" },
+    packaging: { amount: "", basis: "total" },
+    labor: { amount: "", basis: "total" },
+    transportation: { amount: "", basis: "total" },
+    electricity: { amount: "", basis: "total" },
+    marketing: { amount: "", basis: "total" },
+    other: { amount: "", basis: "total" },
   },
-  retailMargin: "70",
+  retailMargin: "60",
   wholesaleMargin: "40",
   percentFee: "0",
   fixedFee: "0",

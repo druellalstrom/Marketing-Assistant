@@ -57,7 +57,7 @@ export default async function CalculatorPage({ searchParams }: PageProps<"/calcu
     <>
       <PageHeader
         title="Pricing & business calculator"
-        description="Enter what a production run costs you. MarketMate works out your true cost per unit, what to charge retail and wholesale, your profit, and how many you need to sell to break even. Results update as you type."
+        description="Answer three quick questions and see what to charge. Your answer updates as you type."
       />
       {loadError && <p className="mb-4 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800" role="alert">{loadError}</p>}
       {/* key forces a fresh form when a different saved calculation is opened */}
